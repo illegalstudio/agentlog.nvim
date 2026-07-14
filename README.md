@@ -5,11 +5,11 @@
 `agentlog.nvim` turns terminal scrollback produced by AI agents into a structured,
 navigable Neovim buffer without changing its original text.
 
-The first supported path is Codex scrollback opened from Zellij. The project is
-currently in its initial scaffold phase: manual attachment, the document/adapter
-boundary, layered diff rendering, contextual Tree-sitter highlighting, and
-dependency-free headless tests are in place. Automatic attachment remains disabled
-until it is backed by representative, anonymized fixtures.
+The first supported path is Codex scrollback opened from Zellij. The plugin
+provides manual attachment, a structured document model, layered diff rendering,
+contextual Tree-sitter highlighting, and dependency-free headless tests. Automatic
+attachment remains disabled until it is backed by representative, anonymized
+fixtures.
 
 ## Requirements
 
@@ -69,6 +69,12 @@ the source, infers the language from the file path, and parses normalized old an
 new snapshots. If a parser or highlight query is unavailable, structural diff
 highlighting continues to work. `diff_code_padding` inserts virtual screen cells,
 so the extra spacing never changes copied text.
+
+## Documentation
+
+- [`doc/agentlog.txt`](doc/agentlog.txt) is the Neovim `:help agentlog` manual.
+- [`docs/`](docs/README.md) contains internal architecture and development
+  documentation for maintainers.
 
 ## Development
 
