@@ -111,10 +111,10 @@ RENDERING                                                    *agentlog-rendering
 
 Turns and actions ~
 
-Codex action headings such as `Ran`, `Edited`, `Explored`, `Read`, and
-`Searched` are emphasized. Claude user prompts, responses, tool calls, output,
-warnings, progress, and interface metadata receive separate semantic groups.
-Recognized file paths retain language and diff metadata.
+Codex action headings such as `Ran`, `Edited`, `Added`, `Deleted`, `Explored`,
+`Read`, and `Searched` are emphasized. Claude user prompts, responses, tool
+calls, output, warnings, progress, and interface metadata receive separate
+semantic groups. Recognized file paths retain language and diff metadata.
 
 Diffs ~
 

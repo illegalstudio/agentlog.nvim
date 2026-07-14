@@ -106,11 +106,12 @@ When enabled, automatic attachment considers only `*.dump` files with a strong
 Codex or Claude signature and enough independent evidence. Set
 `vim.b.agentlog_disable = true` before `BufReadPost` to opt a buffer out.
 
-For Codex `Edited` and Claude `Update` blocks, agentlog separates line numbers and
-diff markers from the source, infers the language from the file path, and parses
-normalized old and new snapshots. Claude `Write` previews receive the same syntax
-highlighting without inventing a diff marker or visual padding. If a parser or
-highlight query is unavailable, structural highlighting continues to work.
+For Codex `Edited`, `Added`, and `Deleted` blocks and Claude `Update` blocks,
+agentlog separates line numbers and diff markers from the source, infers the
+language from the file path, and parses normalized old and new snapshots. Claude
+`Write` previews receive the same syntax highlighting without inventing a diff
+marker or visual padding. If a parser or highlight query is unavailable,
+structural highlighting continues to work.
 `diff_code_padding` inserts virtual screen cells, so the extra spacing never
 changes copied text.
 

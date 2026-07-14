@@ -34,6 +34,16 @@ local inline_tui_lines = {
   "     3      return $value;",
 }
 
+local file_change_tui_lines = {
+  "• Added crates/example/src/lib.rs (+3 -0)",
+  "      1 +//! Purpose:",
+  "      2 +",
+  "      3 +pub const ANSWER: u8 = 42;",
+  "",
+  "• Deleted /tmp/obsolete.lua (+0 -1)",
+  "      1 -return false",
+}
+
 local function region_at(parsed, row)
   for _, region in ipairs(parsed.regions) do
     if region.start_row == row then
@@ -122,5 +132,24 @@ return {
     h.eq("delete", deleted.metadata.line_type)
     h.eq("add", added.metadata.line_type)
     h.eq(action.metadata.diff_id, added.metadata.diff_id)
+  end),
+
+  h.test("Codex parser maps Added and Deleted compact file changes", function()
+    local parsed = adapter.parse(file_change_tui_lines, { transport = "zellij_scrollback" })
+    local added_action = region_at(parsed, 0)
+    local added_line = region_at(parsed, 1)
+    local deleted_action = region_at(parsed, 5)
+    local deleted_line = region_at(parsed, 6)
+
+    h.eq("added", added_action.metadata.action_type)
+    h.eq("crates/example/src/lib.rs", added_action.metadata.path)
+    h.eq("rust", added_action.metadata.language)
+    h.eq("add", added_line.metadata.line_type)
+    h.eq(added_action.metadata.diff_id, added_line.metadata.diff_id)
+    h.eq("deleted", deleted_action.metadata.action_type)
+    h.eq("/tmp/obsolete.lua", deleted_action.metadata.path)
+    h.eq("lua", deleted_action.metadata.language)
+    h.eq("delete", deleted_line.metadata.line_type)
+    h.eq(deleted_action.metadata.diff_id, deleted_line.metadata.diff_id)
   end),
 }

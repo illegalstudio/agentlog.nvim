@@ -8,9 +8,17 @@ local M = {
 local action_labels = {
   "Ran",
   "Edited",
+  "Added",
+  "Deleted",
   "Explored",
   "Read",
   "Searched",
+}
+
+local file_change_actions = {
+  edited = true,
+  added = true,
+  deleted = true,
 }
 
 local markers = {
@@ -57,8 +65,8 @@ local function action_label(line)
   end
 end
 
-local function edited_action_path(line)
-  local path = action_text(line):match("^Edited%s+(.+)%s+%(%+%d+%s+%-%d+%)%s*$")
+local function file_change_action_path(line)
+  local path = action_text(line):match("^%a+%s+(.+)%s+%(%+%d+%s+%-%d+%)%s*$")
   if path and not path:match("^%d+%s+files?$") then
     return path
   end
@@ -74,7 +82,7 @@ local function add_evidence(result, name, weight)
   result.evidence[#result.evidence + 1] = name
 end
 
-local function edited_file_path(line)
+local function file_change_path(line)
   return line:match("^%s*└%s+(.+)%s+%(%+%d+%s+%-%d+%)%s*$")
 end
 
@@ -194,7 +202,7 @@ function M.parse(lines, context)
   local unknown_start = 0
   local inside_diff = false
   local current_action
-  local inside_edited = false
+  local inside_file_change = false
   local current_path
   local current_language
   local current_diff_id
@@ -233,19 +241,19 @@ function M.parse(lines, context)
   for index, line in ipairs(lines) do
     local row = index - 1
     local label = action_label(line)
-    local file_path = inside_edited and edited_file_path(line) or nil
-    local compact_line = inside_edited and compact_diff_line(line) or nil
+    local file_path = inside_file_change and file_change_path(line) or nil
+    local compact_line = inside_file_change and compact_diff_line(line) or nil
 
     if label then
       inside_diff = false
       current_action = label:lower()
-      inside_edited = current_action == "edited"
+      inside_file_change = file_change_actions[current_action] or false
       current_path = nil
       current_language = nil
       current_diff_id = nil
 
       local metadata = { action_type = current_action }
-      local inline_path = inside_edited and edited_action_path(line) or nil
+      local inline_path = inside_file_change and file_change_action_path(line) or nil
       if inline_path then
         select_diff(inline_path)
         metadata = diff_metadata(metadata)

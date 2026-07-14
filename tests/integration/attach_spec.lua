@@ -52,7 +52,7 @@ return {
   h.test("compact diffs layer gutter, background, and Tree-sitter captures", function()
     local bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
-      "• Edited /tmp/example.lua (+1 -0)",
+      "• Added /tmp/example.lua (+1 -0)",
       "     1 +local answer = 42",
     })
 

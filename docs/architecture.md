@@ -90,9 +90,11 @@ commands found in scrollback and never writes to referenced files.
 
 The Codex adapter currently recognizes:
 
-- action headings such as `Ran`, `Edited`, `Explored`, `Read`, and `Searched`;
+- action headings such as `Ran`, `Edited`, `Added`, `Deleted`, `Explored`, `Read`,
+  and `Searched`;
 - indented action output;
-- single-file and multi-file `Edited` blocks;
+- single-file `Edited`, `Added`, and `Deleted` blocks, plus multi-file `Edited`
+  blocks;
 - standard unified diffs;
 - Codex compact rows containing a line number, diff marker, and source text.
 
