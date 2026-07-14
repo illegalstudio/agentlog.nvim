@@ -13,7 +13,9 @@ INTRODUCTION                                                    *agentlog-intro*
 
 agentlog.nvim renders AI-agent terminal scrollback as a structured Neovim
 buffer. It uses highlights and extmarks without changing the original buffer
-text. The initial adapter targets Codex scrollback opened from Zellij.
+text. The initial adapter targets Codex scrollback opened from Zellij. Code in
+recognized diff regions receives contextual Tree-sitter highlighting when its
+language can be inferred and the corresponding parser is installed.
 
 ==============================================================================
 SETUP                                                            *agentlog-setup*
@@ -24,6 +26,14 @@ is present on 'runtimepath'.
     require("agentlog").setup({
       auto_attach = false,
       min_confidence = 0.75,
+      render = {
+        diff_background = true,
+      },
+      syntax = {
+        enabled = true,
+        treesitter = true,
+        max_region_lines = 500,
+      },
     })
 <
 Automatic attachment is experimental and disabled by default while the fixture
@@ -52,8 +62,8 @@ Use |:checkhealth| agentlog to inspect the runtime.
 DEVELOPMENT STATUS                                              *agentlog-status*
 
 This is an initial scaffold. The region model, adapter boundary, conservative
-detector, and basic action/unified-diff recognizers are available. Navigation,
-folding, copy commands, and contextual Tree-sitter highlighting are planned for
-later milestones.
+detector, action and compact/unified-diff recognizers, layered diff rendering,
+and contextual Tree-sitter highlighting are available. Navigation, folding,
+and copy commands are planned for later milestones.
 
 vim:tw=78:ts=8:noet:ft=help:norl:

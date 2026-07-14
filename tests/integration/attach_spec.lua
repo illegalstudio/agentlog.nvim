@@ -1,6 +1,7 @@
 local h = require("tests.helpers")
 local agentlog = require("agentlog")
 local render = require("agentlog.render")
+local syntax = require("agentlog.syntax")
 
 return {
   h.test("plugin commands load without setup", function()
@@ -46,5 +47,61 @@ return {
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
 
     vim.api.nvim_buf_delete(bufnr, { force = true })
+  end),
+
+  h.test("compact diffs layer gutter, background, and Tree-sitter captures", function()
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "• Edited /tmp/example.lua (+1 -0)",
+      "     1 +local answer = 42",
+    })
+
+    agentlog.attach(bufnr)
+    local marks =
+      vim.api.nvim_buf_get_extmarks(bufnr, render.namespace(), 0, -1, { details = true })
+    local groups = {}
+
+    for _, mark in ipairs(marks) do
+      local details = mark[4]
+      groups[details.hl_group] = (groups[details.hl_group] or 0) + 1
+    end
+
+    h.truthy(groups.AgentlogDiffLineNumber)
+    h.truthy(groups.AgentlogDiffAdd)
+    h.truthy(groups.AgentlogDiffAddBackground)
+    h.truthy(groups["@keyword.lua"])
+    h.truthy(groups["@number.lua"])
+    h.eq({}, syntax.get_errors(bufnr))
+
+    agentlog.detach(bufnr)
+    h.eq({}, syntax.get_errors(bufnr))
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end),
+
+  h.test("structural diff highlighting survives when syntax is disabled", function()
+    agentlog.setup({ syntax = { enabled = false } })
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "• Edited /tmp/example.lua (+1 -0)",
+      "     1 +local answer = 42",
+    })
+
+    agentlog.attach(bufnr)
+    local marks =
+      vim.api.nvim_buf_get_extmarks(bufnr, render.namespace(), 0, -1, { details = true })
+    local groups = {}
+
+    for _, mark in ipairs(marks) do
+      groups[mark[4].hl_group] = true
+    end
+
+    h.truthy(groups.AgentlogDiffLineNumber)
+    h.truthy(groups.AgentlogDiffAdd)
+    h.truthy(groups.AgentlogDiffAddBackground)
+    h.falsy(groups["@keyword.lua"])
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+    agentlog.setup()
   end),
 }

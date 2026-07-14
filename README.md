@@ -7,13 +7,14 @@ navigable Neovim buffer without changing its original text.
 
 The first supported path is Codex scrollback opened from Zellij. The project is
 currently in its initial scaffold phase: manual attachment, the document/adapter
-boundary, basic semantic highlighting, and dependency-free headless tests are in
-place. Automatic attachment remains disabled until it is backed by representative,
-anonymized fixtures.
+boundary, layered diff rendering, contextual Tree-sitter highlighting, and
+dependency-free headless tests are in place. Automatic attachment remains disabled
+until it is backed by representative, anonymized fixtures.
 
 ## Requirements
 
 - Neovim 0.10 or newer during the prototype phase
+- A Tree-sitter parser for each language you want highlighted inside diffs
 
 The minimum supported version will be finalized before the first public release.
 
@@ -51,8 +52,21 @@ Automatic detection exists only as an experimental boundary and is off by defaul
 ```lua
 require("agentlog").setup({
   auto_attach = false,
+  render = {
+    diff_background = true,
+  },
+  syntax = {
+    enabled = true,
+    treesitter = true,
+    max_region_lines = 500,
+  },
 })
 ```
+
+For Codex `Edited` blocks, agentlog separates line numbers and diff markers from
+the source, infers the language from the file path, and parses normalized old and
+new snapshots. If a parser or highlight query is unavailable, structural diff
+highlighting continues to work.
 
 ## Development
 
@@ -68,7 +82,7 @@ Real scrollback fixtures must be anonymized before being committed. See
 ## Status
 
 The immediate next milestone is to collect and annotate representative Codex
-scrollbacks, then expand the adapter from the current conservative recognizers into
-the region model described in the development plan.
+scrollbacks, then expand navigation, folding, copying, and coverage for additional
+output variants.
 
 The license for the first public release has not been selected yet.

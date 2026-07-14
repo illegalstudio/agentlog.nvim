@@ -1,4 +1,5 @@
 local document = require("agentlog.document")
+local language = require("agentlog.language")
 
 local M = {
   name = "codex",
@@ -22,7 +23,7 @@ local function starts_with(value, prefix)
   return value:sub(1, #prefix) == prefix
 end
 
-local function action_label(line)
+local function action_text(line)
   local candidate = line:gsub("^%s+", "")
 
   for _, marker in ipairs(markers) do
@@ -32,10 +33,27 @@ local function action_label(line)
     end
   end
 
+  return candidate
+end
+
+local function action_label(line)
+  local candidate = action_text(line)
+
   for _, label in ipairs(action_labels) do
-    if candidate == label or starts_with(candidate, label .. " ") or starts_with(candidate, label .. ":") then
+    if
+      candidate == label
+      or starts_with(candidate, label .. " ")
+      or starts_with(candidate, label .. ":")
+    then
       return label
     end
+  end
+end
+
+local function edited_action_path(line)
+  local path = action_text(line):match("^Edited%s+(.+)%s+%(%+%d+%s+%-%d+%)%s*$")
+  if path and not path:match("^%d+%s+files?$") then
+    return path
   end
 end
 
@@ -53,13 +71,30 @@ local function edited_file_path(line)
   return line:match("^%s*└%s+(.+)%s+%(%+%d+%s+%-%d+%)%s*$")
 end
 
-local function compact_diff_type(line)
-  local marker = line:match("^%s*%d+%s+([+-])")
-  if marker == "+" then
-    return "add"
-  elseif marker == "-" then
-    return "delete"
+local function compact_diff_line(line)
+  local number_start, number, number_end, marker_start, marker, content_start =
+    line:match("^%s*()(%d+)() ()([+%- ])()")
+
+  if not number then
+    return nil
   end
+
+  local line_type = "context"
+  if marker == "+" then
+    line_type = "add"
+  elseif marker == "-" then
+    line_type = "delete"
+  end
+
+  return {
+    line_type = line_type,
+    line_number = tonumber(number),
+    line_number_col = number_start - 1,
+    line_number_end_col = number_end - 1,
+    marker_col = marker_start - 1,
+    content_col = content_start - 1,
+    code = line:sub(content_start),
+  }
 end
 
 function M.detect(lines, context)
@@ -81,7 +116,12 @@ function M.detect(lines, context)
       distinct_actions[label] = true
     end
 
-    if line:match("^diff %-%-git ") or line:match("^@@ .+ @@") or compact_diff_type(line) then
+    local compact_line = compact_diff_line(line)
+    if
+      line:match("^diff %-%-git ")
+      or line:match("^@@ .+ @@")
+      or (compact_line and compact_line.line_type ~= "context")
+    then
       has_diff = true
     end
   end
@@ -131,6 +171,24 @@ function M.parse(lines, context)
   local inside_diff = false
   local current_action
   local inside_edited = false
+  local current_path
+  local current_language
+  local current_diff_id
+  local next_diff_id = 0
+
+  local function select_diff(path)
+    current_path = path
+    current_language = language.from_path(path)
+    next_diff_id = next_diff_id + 1
+    current_diff_id = next_diff_id
+  end
+
+  local function diff_metadata(metadata)
+    metadata.path = current_path
+    metadata.language = current_language
+    metadata.diff_id = current_diff_id
+    return metadata
+  end
 
   local function recognize(row, kind, metadata, confidence)
     if unknown_start < row then
@@ -152,34 +210,81 @@ function M.parse(lines, context)
     local row = index - 1
     local label = action_label(line)
     local file_path = inside_edited and edited_file_path(line) or nil
-    local compact_line_type = inside_edited and compact_diff_type(line) or nil
+    local compact_line = inside_edited and compact_diff_line(line) or nil
 
     if label then
       inside_diff = false
       current_action = label:lower()
       inside_edited = current_action == "edited"
-      recognize(row, "action", { action_type = label:lower() }, 0.9)
+      current_path = nil
+      current_language = nil
+      current_diff_id = nil
+
+      local metadata = { action_type = current_action }
+      local inline_path = inside_edited and edited_action_path(line) or nil
+      if inline_path then
+        select_diff(inline_path)
+        metadata = diff_metadata(metadata)
+      end
+
+      recognize(row, "action", metadata, 0.9)
     elseif line:match("^diff %-%-git ") then
       inside_diff = true
       current_action = nil
-      recognize(row, "diff_header", {}, 1)
-    elseif inside_diff and (line:match("^index ") or line:match("^%-%-%- ") or line:match("^%+%+%+ ")) then
-      recognize(row, "diff_header", {}, 1)
+      local _, new_path = line:match("^diff %-%-git a/(.-) b/(.+)$")
+      select_diff(new_path)
+      recognize(row, "diff_header", diff_metadata({}), 1)
+    elseif
+      inside_diff
+      and (line:match("^index ") or line:match("^%-%-%- ") or line:match("^%+%+%+ "))
+    then
+      local new_path = line:match("^%+%+%+ b/(.+)$")
+      if new_path and new_path ~= "/dev/null" then
+        current_path = new_path
+        current_language = language.from_path(new_path)
+      end
+      recognize(row, "diff_header", diff_metadata({}), 1)
     elseif inside_diff and line:match("^@@ .+ @@") then
-      recognize(row, "diff_hunk", {}, 1)
+      recognize(row, "diff_hunk", diff_metadata({}), 1)
     elseif inside_diff and starts_with(line, "+") then
-      recognize(row, "diff", { line_type = "add" }, 1)
+      recognize(
+        row,
+        "diff",
+        diff_metadata({ line_type = "add", marker_col = 0, content_col = 1, code = line:sub(2) }),
+        1
+      )
     elseif inside_diff and starts_with(line, "-") then
-      recognize(row, "diff", { line_type = "delete" }, 1)
+      recognize(
+        row,
+        "diff",
+        diff_metadata({
+          line_type = "delete",
+          marker_col = 0,
+          content_col = 1,
+          code = line:sub(2),
+        }),
+        1
+      )
     elseif inside_diff and (starts_with(line, " ") or starts_with(line, "\\ No newline")) then
-      recognize(row, "diff", { line_type = "context" }, 1)
+      recognize(
+        row,
+        "diff",
+        diff_metadata({
+          line_type = "context",
+          marker_col = 0,
+          content_col = 1,
+          code = line:sub(2),
+        }),
+        1
+      )
     elseif inside_diff and line == "" then
       inside_diff = false
       current_action = nil
     elseif file_path then
-      recognize(row, "file_reference", { path = file_path }, 1)
-    elseif compact_line_type then
-      recognize(row, "diff", { line_type = compact_line_type }, 1)
+      select_diff(file_path)
+      recognize(row, "file_reference", diff_metadata({}), 1)
+    elseif compact_line then
+      recognize(row, "diff", diff_metadata(compact_line), 1)
     elseif current_action and line:match("^%s+") and line ~= "" then
       recognize(row, "output", {}, 0.8)
     elseif line == "" then

@@ -10,7 +10,10 @@ function M.from_lines(lines, context)
     local adapter_config = config.get().adapters[name]
     local adapter = adapters.get(name)
 
-    if (not adapter_config or adapter_config.enabled ~= false) and type(adapter.detect) == "function" then
+    if
+      (not adapter_config or adapter_config.enabled ~= false)
+      and type(adapter.detect) == "function"
+    then
       local candidate = adapter.detect(lines, context)
       if candidate and (not best or candidate.confidence > best.confidence) then
         best = candidate

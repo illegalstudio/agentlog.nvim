@@ -1,6 +1,7 @@
 local suites = {
   require("tests.unit.config_spec"),
   require("tests.unit.document_spec"),
+  require("tests.unit.language_spec"),
   require("tests.unit.codex_adapter_spec"),
   require("tests.integration.attach_spec"),
 }
