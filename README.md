@@ -99,4 +99,6 @@ The immediate next milestone is to collect and annotate representative Codex
 scrollbacks, then expand navigation, folding, copying, and coverage for additional
 output variants.
 
-The license for the first public release has not been selected yet.
+## License
+
+MIT © 2026 Vincenzo Petrucci. See [LICENSE](LICENSE).
