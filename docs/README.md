@@ -8,9 +8,9 @@ runtime convention and contains the user-facing `:help agentlog` manual.
 
 ## Contents
 
-- [Architecture](architecture.md) — data flow, module boundaries, region model,
+- [Architecture](architecture.md) - data flow, module boundaries, region model,
   rendering layers, and Tree-sitter integration.
-- [Development](development.md) — local workflow, testing, fixtures, extension
+- [Development](development.md) - local workflow, testing, fixtures, extension
   points, and engineering guardrails.
 
 Future design notes, adapter specifications, performance investigations, and

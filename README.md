@@ -20,19 +20,32 @@
 </p>
 
 <p align="center">
-  agentlog.nvim turns terminal scrollback produced by AI agents — Codex and
-  Claude Code, opened from Zellij — into a structured, navigable Neovim buffer
+  agentlog.nvim turns terminal scrollback produced by AI agents - Codex and
+  Claude Code, opened from Zellij - into a structured, navigable Neovim buffer
   without changing its original text.
 </p>
 
 ---
 
+## Why agentlog?
+
+I spend a lot of time running AI coding agents - usually Codex and Claude Code -
+inside Zellij. When I need to jump back through their history or copy part of an
+agent's output, I prefer to stay on the keyboard: `Ctrl+S`, then `E`, opens the
+active pane's scrollback in my default editor, Neovim.
+
+That workflow is fast, but raw agent scrollback is not especially pleasant to
+read. Prose, tool calls, code, and diffs all compete for attention in what is
+ultimately a plain-text buffer. I wanted the output to become structured and
+syntax-highlighted as soon as it reached Neovim, while keeping the original text
+untouched. agentlog.nvim grew out of that need: preserving Zellij's quick,
+mouse-free workflow while making AI agent output much easier to revisit,
+navigate, and copy.
+
 ## Requirements
 
-- Neovim 0.10 or newer during the prototype phase
+- Neovim 0.10 or newer
 - A Tree-sitter parser for each language you want highlighted inside diffs
-
-The minimum supported version will be finalized before the first public release.
 
 ## Installation
 
@@ -55,7 +68,9 @@ configuration as soon as the plugin is on `runtimepath`.
 
 ## Usage
 
-Open a scrollback dump and run:
+Open a scrollback dump in Neovim. For example, in Zellij, focus the pane running
+the agent, press `Ctrl+S` to enter scroll mode, then press `E` to open that
+pane's scrollback in your default editor. Once the buffer is open, run:
 
 ```vim
 :AgentlogAttach
@@ -65,10 +80,10 @@ The command detects the matching Codex or Claude adapter from the buffer.
 
 The initial commands are:
 
-- `:AgentlogAttach` — parse and render the current buffer;
-- `:AgentlogRefresh` — rebuild the document and its decorations;
-- `:AgentlogDetach` — remove decorations and restore the previous filetype;
-- `:checkhealth agentlog` — inspect the local runtime.
+- `:AgentlogAttach` - parse and render the current buffer;
+- `:AgentlogRefresh` - rebuild the document and its decorations;
+- `:AgentlogDetach` - remove decorations and restore the previous filetype;
+- `:checkhealth agentlog` - inspect the local runtime.
 
 Automatic attachment is off by default:
 

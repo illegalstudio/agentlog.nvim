@@ -8,7 +8,7 @@ function M.check()
   if vim.fn.has("nvim-0.10") == 1 then
     vim.health.ok("Neovim 0.10 or newer is available")
   else
-    vim.health.error("Neovim 0.10 or newer is required during the prototype phase")
+    vim.health.error("Neovim 0.10 or newer is required")
   end
 
   if config.get().auto_attach then
