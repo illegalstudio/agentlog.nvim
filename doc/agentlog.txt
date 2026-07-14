@@ -1,0 +1,59 @@
+*agentlog.txt*                      Make AI agent scrollback readable.
+
+==============================================================================
+CONTENTS                                                     *agentlog-contents*
+
+1. Introduction ............................................... |agentlog-intro|
+2. Setup ....................................................... |agentlog-setup|
+3. Commands ................................................. |agentlog-commands|
+4. Development status ......................................... |agentlog-status|
+
+==============================================================================
+INTRODUCTION                                                    *agentlog-intro*
+
+agentlog.nvim renders AI-agent terminal scrollback as a structured Neovim
+buffer. It uses highlights and extmarks without changing the original buffer
+text. The initial adapter targets Codex scrollback opened from Zellij.
+
+==============================================================================
+SETUP                                                            *agentlog-setup*
+
+Calling setup() is optional. Defaults are loaded automatically when the plugin
+is present on 'runtimepath'.
+>
+    require("agentlog").setup({
+      auto_attach = false,
+      min_confidence = 0.75,
+    })
+<
+Automatic attachment is experimental and disabled by default while the fixture
+corpus is being assembled.
+
+==============================================================================
+COMMANDS                                                      *agentlog-commands*
+
+                                                        *:AgentlogAttach*
+:AgentlogAttach
+        Attach the Codex adapter to the current buffer, build its region
+        document, set 'filetype' to "agentlog", and render decorations.
+
+                                                       *:AgentlogRefresh*
+:AgentlogRefresh
+        Reparse the current attached buffer and rebuild all decorations.
+
+                                                        *:AgentlogDetach*
+:AgentlogDetach
+        Clear plugin decorations and restore the filetype that was active when
+        the buffer was attached.
+
+Use |:checkhealth| agentlog to inspect the runtime.
+
+==============================================================================
+DEVELOPMENT STATUS                                              *agentlog-status*
+
+This is an initial scaffold. The region model, adapter boundary, conservative
+detector, and basic action/unified-diff recognizers are available. Navigation,
+folding, copy commands, and contextual Tree-sitter highlighting are planned for
+later milestones.
+
+vim:tw=78:ts=8:noet:ft=help:norl:
