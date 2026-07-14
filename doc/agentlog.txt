@@ -1,21 +1,41 @@
-*agentlog.txt*                      Make AI agent scrollback readable.
+*agentlog.txt* *agentlog*              Make AI agent scrollback readable.
 
 ==============================================================================
 CONTENTS                                                     *agentlog-contents*
 
 1. Introduction ............................................... |agentlog-intro|
-2. Setup ....................................................... |agentlog-setup|
-3. Commands ................................................. |agentlog-commands|
-4. Development status ......................................... |agentlog-status|
+2. Requirements ......................................... |agentlog-requirements|
+3. Setup ....................................................... |agentlog-setup|
+4. Usage ....................................................... |agentlog-usage|
+5. Commands ................................................. |agentlog-commands|
+6. Rendering ............................................... |agentlog-rendering|
+7. Configuration ............................................. |agentlog-config|
+8. Lua API ....................................................... |agentlog-api|
+9. Current scope .............................................. |agentlog-scope|
 
 ==============================================================================
 INTRODUCTION                                                    *agentlog-intro*
 
-agentlog.nvim renders AI-agent terminal scrollback as a structured Neovim
-buffer. It uses highlights and extmarks without changing the original buffer
-text. The initial adapter targets Codex scrollback opened from Zellij. Code in
-recognized diff regions receives contextual Tree-sitter highlighting when its
-language can be inferred and the corresponding parser is installed.
+agentlog.nvim turns AI-agent terminal scrollback into a structured Neovim
+buffer. The first supported workflow is Codex scrollback opened from Zellij.
+
+The adapter recognizes actions, command output, file references, and compact
+or unified diffs. Rendering is non-destructive: highlights, extmarks, and
+virtual text change only the presentation. The original buffer text remains
+available for normal selection, yanking, and inspection.
+
+Recognized diff code receives contextual Tree-sitter highlighting when the
+language can be inferred from a file path and its parser is installed.
+
+==============================================================================
+REQUIREMENTS                                              *agentlog-requirements*
+
+- Neovim 0.10 or newer.
+- A Tree-sitter parser and highlight query for every language that should be
+  highlighted inside diffs.
+
+Tree-sitter is optional. Actions, output, file references, and structural diff
+highlighting continue to work when a parser is unavailable.
 
 ==============================================================================
 SETUP                                                            *agentlog-setup*
@@ -26,6 +46,9 @@ is present on 'runtimepath'.
     require("agentlog").setup({
       auto_attach = false,
       min_confidence = 0.75,
+      adapters = {
+        codex = { enabled = true },
+      },
       render = {
         diff_background = true,
         diff_code_padding = 1,
@@ -37,9 +60,25 @@ is present on 'runtimepath'.
       },
     })
 <
-Automatic attachment is experimental and disabled by default while the fixture
-corpus is being assembled. `diff_code_padding` is measured in terminal cells
-and uses virtual text, so it does not alter the buffer or copied content.
+Automatic attachment is disabled by default. This keeps detection conservative
+while manual attachment remains available for every buffer.
+
+==============================================================================
+USAGE                                                            *agentlog-usage*
+
+Open a Codex scrollback dump and run:
+>
+    :AgentlogAttach
+<
+The buffer 'filetype' becomes "agentlog" and the current contents are parsed
+and rendered. The text and the buffer's modified state are not changed.
+
+Run |:AgentlogRefresh| after the contents change or after installing a missing
+Tree-sitter parser. Use |:AgentlogDetach| to clear all decorations and restore
+the filetype that was active before attachment.
+
+When using Zellij, open scrollback in the configured editor and attach after
+Neovim starts. Automatic attachment can be enabled with `auto_attach = true`.
 
 ==============================================================================
 COMMANDS                                                      *agentlog-commands*
@@ -48,24 +87,151 @@ COMMANDS                                                      *agentlog-commands
 :AgentlogAttach
         Attach the Codex adapter to the current buffer, build its region
         document, set 'filetype' to "agentlog", and render decorations.
+        Calling it again refreshes an already attached buffer.
 
                                                        *:AgentlogRefresh*
 :AgentlogRefresh
-        Reparse the current attached buffer and rebuild all decorations.
+        Reparse an attached buffer and rebuild every decoration. Rendering is
+        idempotent; old extmarks are cleared before new ones are applied.
 
                                                         *:AgentlogDetach*
 :AgentlogDetach
-        Clear plugin decorations and restore the filetype that was active when
-        the buffer was attached.
+        Clear plugin decorations and restore the previous filetype. Buffer
+        contents remain unchanged.
 
-Use |:checkhealth| agentlog to inspect the runtime.
+Use |:checkhealth| agentlog to inspect the Neovim and Tree-sitter runtime.
 
 ==============================================================================
-DEVELOPMENT STATUS                                              *agentlog-status*
+RENDERING                                                    *agentlog-rendering*
 
-This is an initial scaffold. The region model, adapter boundary, conservative
-detector, action and compact/unified-diff recognizers, layered diff rendering,
-and contextual Tree-sitter highlighting are available. Navigation, folding,
-and copy commands are planned for later milestones.
+Actions ~
+
+Codex action headings such as `Ran`, `Edited`, `Explored`, `Read`, and
+`Searched` are emphasized. Their output is rendered with a quieter highlight,
+while recognized file paths use |hl-Directory|.
+
+Diffs ~
+
+Both unified diffs and Codex's compact numbered format are supported. Compact
+diff rows are split into independent visual layers:
+
+- line number;
+- `+`, `-`, or context marker;
+- optional muted add/delete background;
+- virtual padding before the source code;
+- Tree-sitter captures for the source language.
+
+`diff_code_padding` is measured in terminal cells, not pixels. Padding uses
+inline virtual text and therefore does not affect copied text.
+
+Syntax highlighting ~
+
+For each diff, agentlog builds normalized old and new source snapshots. Diff
+markers and line numbers are removed only from these internal representations.
+Tree-sitter captures are then mapped back to the original buffer columns.
+
+PHP snippets without an opening tag receive a synthetic `<?php` prefix in the
+internal snapshot. The prefix is never inserted into the visible buffer.
+
+Languages currently inferred from common extensions include Bash, C, C++,
+CSS, Go, HTML, JavaScript, JSON, Lua, Markdown, PHP, Python, Rust, TypeScript,
+TSX, Vim, and YAML.
+
+Highlight groups ~
+
+The plugin defines semantic groups that colorschemes and users may override:
+>
+    AgentlogResponse
+    AgentlogAction
+    AgentlogActionSuccess
+    AgentlogActionFailure
+    AgentlogCommand
+    AgentlogOutput
+    AgentlogMetadata
+    AgentlogFile
+    AgentlogDiffAdd
+    AgentlogDiffDelete
+    AgentlogDiffContext
+    AgentlogDiffHeader
+    AgentlogDiffLineNumber
+    AgentlogDiffAddBackground
+    AgentlogDiffDeleteBackground
+    AgentlogError
+    AgentlogWarning
+    AgentlogCollapsed
+<
+Default groups link to standard Neovim highlights. Muted diff backgrounds are
+derived from the active colorscheme and reapplied after |ColorScheme| events.
+
+==============================================================================
+CONFIGURATION                                                  *agentlog-config*
+
+                                                   *agentlog-auto-attach*
+`auto_attach` ~
+        Boolean, default false. Detect and attach supported scrollback on
+        |BufReadPost| when the confidence threshold is met.
+
+                                                *agentlog-min-confidence*
+`min_confidence` ~
+        Number from 0 to 1, default 0.75. Minimum detector score required for
+        automatic attachment.
+
+                                              *agentlog-adapters-codex*
+`adapters.codex.enabled` ~
+        Boolean, default true. Enable the built-in Codex adapter.
+
+                                             *agentlog-diff-background*
+`render.diff_background` ~
+        Boolean, default true. Add muted backgrounds to inserted and deleted
+        source text. Line numbers and markers remain independently
+        highlighted.
+
+                                           *agentlog-diff-code-padding*
+`render.diff_code_padding` ~
+        Non-negative integer, default 1. Number of virtual terminal cells
+        inserted between the diff marker and source code. Use 0 to disable.
+
+                                                *agentlog-syntax-enabled*
+`syntax.enabled` ~
+        Boolean, default true. Enable contextual syntax highlighting.
+
+                                             *agentlog-syntax-treesitter*
+`syntax.treesitter` ~
+        Boolean, default true. Use Tree-sitter for normalized diff snapshots.
+
+                                       *agentlog-syntax-max-region-lines*
+`syntax.max_region_lines` ~
+        Positive integer, default 500. Skip advanced parsing for larger diff
+        regions while keeping structural highlighting active.
+
+==============================================================================
+LUA API                                                            *agentlog-api*
+
+The command behavior is also available through Lua:
+>
+    local agentlog = require("agentlog")
+
+    agentlog.setup(options)
+    agentlog.attach(bufnr, { source = "codex" })
+    agentlog.refresh(bufnr)
+    agentlog.detach(bufnr)
+    agentlog.is_attached(bufnr)
+    agentlog.get_document(bufnr)
+<
+`bufnr` may be 0 or omitted where applicable to target the current buffer.
+`get_document()` returns the structured region document generated by the
+active adapter.
+
+==============================================================================
+CURRENT SCOPE                                                    *agentlog-scope*
+
+The current implementation supports the Codex adapter and the Zellij
+scrollback workflow. Recognition is deliberately conservative: ambiguous text
+stays neutral instead of receiving a potentially incorrect semantic type.
+
+Navigation mappings, folding, copy commands, focus modes, and adapters for
+other agents are not yet implemented. Configuration fields reserved for those
+features should not be considered active until their corresponding behavior is
+documented here.
 
 vim:tw=78:ts=8:noet:ft=help:norl:
