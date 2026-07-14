@@ -88,7 +88,7 @@ local function render_diff(bufnr, region, line)
     vim.api.nvim_buf_set_extmark(bufnr, namespace, region.start_row, metadata.content_col, {
       virt_text = { { string.rep(" ", padding), padding_group } },
       virt_text_pos = "inline",
-      hl_mode = "combine",
+      hl_mode = "replace",
       priority = 90,
       strict = false,
     })

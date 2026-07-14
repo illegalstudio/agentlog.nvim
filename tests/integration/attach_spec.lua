@@ -69,6 +69,7 @@ return {
       end
       if details.virt_text and details.virt_text_pos == "inline" then
         padding = details.virt_text[1][1]
+        h.eq("replace", details.hl_mode)
       end
     end
 
