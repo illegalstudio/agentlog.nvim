@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/illegalstudio/agentlog.nvim/stargazers"><img src="https://img.shields.io/github/stars/illegalstudio/agentlog.nvim?style=flat-square&logo=github&logoColor=white&label=stars&color=4BD4B3" alt="Stars"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/illegalstudio/agentlog.nvim?style=flat-square&color=4BD4B3" alt="License: MIT"></a>
+  <a href="https://github.com/illegalstudio/agentlog.nvim/stargazers"><img src="https://img.shields.io/github/stars/illegalstudio/agentlog.nvim?style=flat-square&logo=github&logoColor=white&label=stars&color=4BD4B3&cacheSeconds=3600" alt="Stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/illegalstudio/agentlog.nvim?style=flat-square&color=4BD4B3&cacheSeconds=3600" alt="License: MIT"></a>
   <a href="https://neovim.io"><img src="https://img.shields.io/badge/Neovim-%E2%89%A5%200.10-4BD4B3?style=flat-square&logo=neovim&logoColor=white" alt="Neovim ≥ 0.10"></a>
   <a href="https://x.com/nahime0"><img src="https://img.shields.io/badge/Follow-%40nahime0-4BD4B3?style=flat-square&logo=x&logoColor=white" alt="Follow @nahime0 on X"></a>
 </p>
