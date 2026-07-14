@@ -150,10 +150,14 @@ advanced parsing.
 ## Detection
 
 The detector samples at most the first 2,000 lines and combines independent
-signals such as Codex actions, diff formats, dump extension, Zellij paths, and
-readonly state. A filename alone is insufficient for a confident attachment.
+signals such as Codex actions, structured output, diff formats, dump extension,
+temporary or Zellij paths, and readonly state. A filename alone is insufficient
+for a confident attachment.
 
-Automatic attachment is off by default while the fixture corpus grows.
+Automatic attachment is limited to normal `*.dump` buffers and requires both a
+Codex action signature and the configured confidence score. It is off by default
+while the fixture corpus grows. `vim.b.agentlog_disable = true` opts one buffer
+out without disabling manual attachment.
 
 ## Extension points
 

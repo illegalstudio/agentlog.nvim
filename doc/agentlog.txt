@@ -44,7 +44,7 @@ Calling setup() is optional. Defaults are loaded automatically when the plugin
 is present on 'runtimepath'.
 >
     require("agentlog").setup({
-      auto_attach = false,
+      -- auto_attach = true, -- Uncomment to enable automatic attachment.
       min_confidence = 0.75,
       adapters = {
         codex = { enabled = true },
@@ -60,8 +60,9 @@ is present on 'runtimepath'.
       },
     })
 <
-Automatic attachment is disabled by default. This keeps detection conservative
-while manual attachment remains available for every buffer.
+Automatic attachment is disabled by default. When enabled, only `*.dump` files
+with a strong Codex signature and enough independent evidence are attached.
+Manual attachment remains available for every buffer.
 
 ==============================================================================
 USAGE                                                            *agentlog-usage*
@@ -79,6 +80,8 @@ the filetype that was active before attachment.
 
 When using Zellij, open scrollback in the configured editor and attach after
 Neovim starts. Automatic attachment can be enabled with `auto_attach = true`.
+Set `vim.b.agentlog_disable = true` before |BufReadPost| to prevent automatic
+attachment for one buffer. Manual attachment remains possible.
 
 ==============================================================================
 COMMANDS                                                      *agentlog-commands*
@@ -168,8 +171,9 @@ CONFIGURATION                                                  *agentlog-config*
 
                                                    *agentlog-auto-attach*
 `auto_attach` ~
-        Boolean, default false. Detect and attach supported scrollback on
-        |BufReadPost| when the confidence threshold is met.
+        Boolean, default false. Detect and attach supported `*.dump` scrollback
+        on |BufReadPost| when a Codex action signature is present and the
+        confidence threshold is met.
 
                                                 *agentlog-min-confidence*
 `min_confidence` ~

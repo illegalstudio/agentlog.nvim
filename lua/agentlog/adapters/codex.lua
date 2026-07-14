@@ -109,11 +109,17 @@ function M.detect(lines, context)
 
   local distinct_actions = {}
   local has_diff = false
+  local has_structured_output = false
 
   for _, line in ipairs(lines) do
     local label = action_label(line)
     if label then
       distinct_actions[label] = true
+    end
+
+    local trimmed = line:gsub("^%s+", "")
+    if starts_with(trimmed, "└ ") or starts_with(trimmed, "│ ") then
+      has_structured_output = true
     end
 
     local compact_line = compact_diff_line(line)
@@ -133,6 +139,9 @@ function M.detect(lines, context)
   if action_count > 1 then
     add_evidence(result, "multiple_action_types", 0.15)
   end
+  if has_structured_output then
+    add_evidence(result, "structured_output", 0.15)
+  end
   if has_diff then
     add_evidence(result, "unified_diff", 0.25)
   end
@@ -144,6 +153,13 @@ function M.detect(lines, context)
   if path:find("zellij", 1, true) then
     result.transport = "zellij_scrollback"
     add_evidence(result, "zellij_path", 0.15)
+  end
+  if
+    path:match("^/tmp/")
+    or path:match("^/private/var/folders/")
+    or path:match("^/var/folders/")
+  then
+    add_evidence(result, "temporary_path", 0.05)
   end
   if context.readonly then
     add_evidence(result, "readonly_buffer", 0.05)

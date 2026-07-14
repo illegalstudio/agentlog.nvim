@@ -27,7 +27,8 @@ Tests currently cover:
 - attach, refresh, and detach integrity;
 - layered diff extmarks;
 - contextual Tree-sitter captures;
-- structural fallback when syntax highlighting is disabled.
+- structural fallback when syntax highlighting is disabled;
+- positive, negative, and per-buffer opt-out behavior for automatic attachment.
 
 Generate help tags as a documentation check:
 

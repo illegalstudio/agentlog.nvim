@@ -114,4 +114,47 @@ return {
     vim.api.nvim_buf_delete(bufnr, { force = true })
     agentlog.setup()
   end),
+
+  h.test("automatic attachment is conservative and supports a buffer opt-out", function()
+    agentlog.setup({ auto_attach = true })
+
+    local function open_dump(lines, disable)
+      local path = vim.fn.tempname() .. ".dump"
+      h.eq(0, vim.fn.writefile(lines, path))
+
+      if disable then
+        vim.api.nvim_create_autocmd("BufReadPre", {
+          pattern = "*.dump",
+          once = true,
+          callback = function(event)
+            vim.b[event.buf].agentlog_disable = true
+          end,
+        })
+      end
+
+      vim.cmd.edit(vim.fn.fnameescape(path))
+      return path, vim.api.nvim_get_current_buf()
+    end
+
+    local positive_path, positive_buffer =
+      open_dump({ "• Ran pwd", "  └ /tmp/example" }, false)
+    h.truthy(agentlog.is_attached(positive_buffer))
+    h.eq("agentlog", vim.bo[positive_buffer].filetype)
+    agentlog.detach(positive_buffer)
+    vim.api.nvim_buf_delete(positive_buffer, { force = true })
+    vim.fn.delete(positive_path)
+
+    local negative_path, negative_buffer = open_dump({ "ordinary server log" }, false)
+    h.falsy(agentlog.is_attached(negative_buffer))
+    vim.api.nvim_buf_delete(negative_buffer, { force = true })
+    vim.fn.delete(negative_path)
+
+    local disabled_path, disabled_buffer =
+      open_dump({ "• Ran pwd", "  └ /tmp/example" }, true)
+    h.falsy(agentlog.is_attached(disabled_buffer))
+    vim.api.nvim_buf_delete(disabled_buffer, { force = true })
+    vim.fn.delete(disabled_path)
+
+    agentlog.setup()
+  end),
 }

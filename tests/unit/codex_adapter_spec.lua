@@ -62,6 +62,17 @@ return {
     h.truthy(result.confidence < 0.75)
   end),
 
+  h.test("Codex detector accepts one structured action in a temporary dump", function()
+    local result = adapter.detect({ "• Ran pwd", "  └ /tmp/example" }, {
+      path = "/private/var/folders/example/T/session.dump",
+    })
+
+    h.truthy(result.confidence >= 0.75)
+    h.truthy(vim.tbl_contains(result.evidence, "codex_action"))
+    h.truthy(vim.tbl_contains(result.evidence, "structured_output"))
+    h.truthy(vim.tbl_contains(result.evidence, "temporary_path"))
+  end),
+
   h.test("Codex parser recognizes action and unified diff lines", function()
     local parsed = adapter.parse(lines, { transport = "zellij_scrollback" })
     local kinds = vim.tbl_map(function(region)

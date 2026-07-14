@@ -27,6 +27,10 @@ local function assert_buffer(bufnr)
   end
 end
 
+local function has_evidence(detection, name)
+  return detection.evidence and vim.tbl_contains(detection.evidence, name)
+end
+
 local function parse(bufnr, source, transport)
   local adapter_config = config.get().adapters[source]
   if adapter_config and adapter_config.enabled == false then
@@ -134,14 +138,24 @@ function M.configure_auto_attach()
 
   vim.api.nvim_create_autocmd("BufReadPost", {
     group = auto_attach_group,
+    pattern = "*.dump",
     desc = "Attach agentlog.nvim to confidently detected scrollback",
     callback = function(event)
-      if states[event.buf] then
+      if
+        states[event.buf]
+        or vim.b[event.buf].agentlog_disable
+        or vim.api.nvim_get_option_value("buftype", { buf = event.buf }) ~= ""
+      then
         return
       end
 
       local ok, detection = pcall(detect.buffer, event.buf)
-      if not ok or not detection or detection.confidence < config.get().min_confidence then
+      if
+        not ok
+        or not detection
+        or not has_evidence(detection, "codex_action")
+        or detection.confidence < config.get().min_confidence
+      then
         return
       end
 

@@ -25,7 +25,9 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 {
   "illegalstudio/agentlog.nvim",
-  opts = {},
+  opts = {
+    -- auto_attach = true, -- Uncomment to enable automatic attachment.
+  },
 }
 ```
 
@@ -47,11 +49,11 @@ The initial commands are:
 - `:AgentlogDetach` — remove decorations and restore the previous filetype;
 - `:checkhealth agentlog` — inspect the local runtime.
 
-Automatic detection exists only as an experimental boundary and is off by default:
+Automatic attachment is off by default:
 
 ```lua
 require("agentlog").setup({
-  auto_attach = false,
+  -- auto_attach = true, -- Uncomment to enable automatic attachment.
   render = {
     diff_background = true,
     diff_code_padding = 1,
@@ -63,6 +65,10 @@ require("agentlog").setup({
   },
 })
 ```
+
+When enabled, automatic attachment considers only `*.dump` files with a strong
+Codex signature and enough independent evidence. Set
+`vim.b.agentlog_disable = true` before `BufReadPost` to opt a buffer out.
 
 For Codex `Edited` blocks, agentlog separates line numbers and diff markers from
 the source, infers the language from the file path, and parses normalized old and
