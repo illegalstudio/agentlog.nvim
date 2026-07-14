@@ -7,6 +7,7 @@ local M = {
 local action_labels = {
   "Ran",
   "Edited",
+  "Explored",
   "Read",
   "Searched",
 }
@@ -48,6 +49,19 @@ local function add_evidence(result, name, weight)
   result.evidence[#result.evidence + 1] = name
 end
 
+local function edited_file_path(line)
+  return line:match("^%s*└%s+(.+)%s+%(%+%d+%s+%-%d+%)%s*$")
+end
+
+local function compact_diff_type(line)
+  local marker = line:match("^%s*%d+%s+([+-])")
+  if marker == "+" then
+    return "add"
+  elseif marker == "-" then
+    return "delete"
+  end
+end
+
 function M.detect(lines, context)
   context = context or {}
   local result = {
@@ -67,7 +81,7 @@ function M.detect(lines, context)
       distinct_actions[label] = true
     end
 
-    if line:match("^diff %-%-git ") or line:match("^@@ .+ @@") then
+    if line:match("^diff %-%-git ") or line:match("^@@ .+ @@") or compact_diff_type(line) then
       has_diff = true
     end
   end
@@ -115,6 +129,8 @@ function M.parse(lines, context)
   local regions = {}
   local unknown_start = 0
   local inside_diff = false
+  local current_action
+  local inside_edited = false
 
   local function recognize(row, kind, metadata, confidence)
     if unknown_start < row then
@@ -135,12 +151,17 @@ function M.parse(lines, context)
   for index, line in ipairs(lines) do
     local row = index - 1
     local label = action_label(line)
+    local file_path = inside_edited and edited_file_path(line) or nil
+    local compact_line_type = inside_edited and compact_diff_type(line) or nil
 
     if label then
       inside_diff = false
+      current_action = label:lower()
+      inside_edited = current_action == "edited"
       recognize(row, "action", { action_type = label:lower() }, 0.9)
     elseif line:match("^diff %-%-git ") then
       inside_diff = true
+      current_action = nil
       recognize(row, "diff_header", {}, 1)
     elseif inside_diff and (line:match("^index ") or line:match("^%-%-%- ") or line:match("^%+%+%+ ")) then
       recognize(row, "diff_header", {}, 1)
@@ -154,6 +175,15 @@ function M.parse(lines, context)
       recognize(row, "diff", { line_type = "context" }, 1)
     elseif inside_diff and line == "" then
       inside_diff = false
+      current_action = nil
+    elseif file_path then
+      recognize(row, "file_reference", { path = file_path }, 1)
+    elseif compact_line_type then
+      recognize(row, "diff", { line_type = compact_line_type }, 1)
+    elseif current_action and line:match("^%s+") and line ~= "" then
+      recognize(row, "output", {}, 0.8)
+    elseif line == "" then
+      current_action = nil
     end
   end
 

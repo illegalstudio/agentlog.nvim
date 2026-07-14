@@ -2,7 +2,7 @@ local M = {}
 
 local links = {
   AgentlogResponse = "Normal",
-  AgentlogAction = "Title",
+  AgentlogAction = "Function",
   AgentlogActionSuccess = "DiagnosticOk",
   AgentlogActionFailure = "DiagnosticError",
   AgentlogCommand = "Statement",

@@ -15,6 +15,16 @@ local lines = {
   "",
   "Unclassified narrative text.",
 }
+
+local tui_lines = {
+  "• Explored",
+  "  └ Search function in example.lua",
+  "",
+  "• Edited 1 file (+2 -0)",
+  "  └ /tmp/example.php (+2 -0)",
+  "     1 +<?php",
+  "     2 +echo 'ok';",
+}
 return {
   h.test("Codex detector combines independent evidence", function()
     local result = adapter.detect(lines, {
@@ -47,5 +57,20 @@ return {
     h.truthy(vim.list_contains(kinds, "diff_hunk"))
     h.truthy(vim.list_contains(kinds, "diff"))
     h.eq("unknown", kinds[#kinds])
+  end),
+
+  h.test("Codex parser recognizes TUI actions, output, files, and compact diffs", function()
+    local parsed = adapter.parse(tui_lines, { transport = "zellij_scrollback" })
+    local kinds = vim.tbl_map(function(region)
+      return region.kind
+    end, parsed.regions)
+
+    h.eq("action", kinds[1])
+    h.eq("explored", parsed.regions[1].metadata.action_type)
+    h.truthy(vim.list_contains(kinds, "output"))
+    h.truthy(vim.list_contains(kinds, "file_reference"))
+    h.eq("/tmp/example.php", parsed.regions[5].metadata.path)
+    h.eq("add", parsed.regions[6].metadata.line_type)
+    h.eq("add", parsed.regions[7].metadata.line_type)
   end),
 }
