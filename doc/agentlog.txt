@@ -17,12 +17,13 @@ CONTENTS                                                     *agentlog-contents*
 INTRODUCTION                                                    *agentlog-intro*
 
 agentlog.nvim turns AI-agent terminal scrollback into a structured Neovim
-buffer. The first supported workflow is Codex scrollback opened from Zellij.
+buffer. The supported workflows are Codex and Claude Code scrollback opened
+from Zellij.
 
-The adapter recognizes actions, command output, file references, and compact
-or unified diffs. Rendering is non-destructive: highlights, extmarks, and
-virtual text change only the presentation. The original buffer text remains
-available for normal selection, yanking, and inspection.
+The adapters recognize prompts, responses, actions, command output, file
+references, and compact or unified diffs. Rendering is non-destructive:
+highlights, extmarks, and virtual text change only the presentation. The
+original buffer text remains available for selection, yanking, and inspection.
 
 Recognized diff code receives contextual Tree-sitter highlighting when the
 language can be inferred from a file path and its parser is installed.
@@ -47,6 +48,7 @@ is present on 'runtimepath'.
       -- auto_attach = true, -- Uncomment to enable automatic attachment.
       min_confidence = 0.75,
       adapters = {
+        claude = { enabled = true },
         codex = { enabled = true },
       },
       render = {
@@ -61,13 +63,13 @@ is present on 'runtimepath'.
     })
 <
 Automatic attachment is disabled by default. When enabled, only `*.dump` files
-with a strong Codex signature and enough independent evidence are attached.
-Manual attachment remains available for every buffer.
+with a strong Codex or Claude signature and enough independent evidence are
+attached. Manual attachment remains available for every buffer.
 
 ==============================================================================
 USAGE                                                            *agentlog-usage*
 
-Open a Codex scrollback dump and run:
+Open a Codex or Claude scrollback dump and run:
 >
     :AgentlogAttach
 <
@@ -88,9 +90,9 @@ COMMANDS                                                      *agentlog-commands
 
                                                         *:AgentlogAttach*
 :AgentlogAttach
-        Attach the Codex adapter to the current buffer, build its region
-        document, set 'filetype' to "agentlog", and render decorations.
-        Calling it again refreshes an already attached buffer.
+        Detect and attach the supported adapter for the current buffer, build
+        its region document, set 'filetype' to "agentlog", and render
+        decorations. Calling it again refreshes an attached buffer.
 
                                                        *:AgentlogRefresh*
 :AgentlogRefresh
@@ -107,15 +109,19 @@ Use |:checkhealth| agentlog to inspect the Neovim and Tree-sitter runtime.
 ==============================================================================
 RENDERING                                                    *agentlog-rendering*
 
-Actions ~
+Turns and actions ~
 
 Codex action headings such as `Ran`, `Edited`, `Explored`, `Read`, and
-`Searched` are emphasized. Their output is rendered with a quieter highlight,
-while recognized file paths use |hl-Directory|.
+`Searched` are emphasized. Claude user prompts, responses, tool calls, output,
+warnings, progress, and interface metadata receive separate semantic groups.
+Recognized file paths retain language and diff metadata.
 
 Diffs ~
 
-Both unified diffs and Codex's compact numbered format are supported. Compact
+Unified diffs, Codex's compact numbered format, and Claude `Update` previews
+are supported. Claude `Write` previews are treated as newly added numbered
+source without displaying a nonexistent marker. Blank rows and wrapped result
+paths between a Claude tool call and its source preview are supported. Compact
 diff rows are split into independent visual layers:
 
 - line number;
@@ -172,13 +178,17 @@ CONFIGURATION                                                  *agentlog-config*
                                                    *agentlog-auto-attach*
 `auto_attach` ~
         Boolean, default false. Detect and attach supported `*.dump` scrollback
-        on |BufReadPost| when a Codex action signature is present and the
+        on |BufReadPost| when a supported agent signature is present and the
         confidence threshold is met.
 
                                                 *agentlog-min-confidence*
 `min_confidence` ~
         Number from 0 to 1, default 0.75. Minimum detector score required for
         automatic attachment.
+
+                                             *agentlog-adapters-claude*
+`adapters.claude.enabled` ~
+        Boolean, default true. Enable the built-in Claude Code adapter.
 
                                               *agentlog-adapters-codex*
 `adapters.codex.enabled` ~
@@ -216,6 +226,8 @@ The command behavior is also available through Lua:
     local agentlog = require("agentlog")
 
     agentlog.setup(options)
+    agentlog.attach(bufnr)
+    agentlog.attach(bufnr, { source = "claude" })
     agentlog.attach(bufnr, { source = "codex" })
     agentlog.refresh(bufnr)
     agentlog.detach(bufnr)
@@ -223,19 +235,21 @@ The command behavior is also available through Lua:
     agentlog.get_document(bufnr)
 <
 `bufnr` may be 0 or omitted where applicable to target the current buffer.
-`get_document()` returns the structured region document generated by the
-active adapter.
+Without `source`, attach detects the best matching enabled adapter. Explicit
+selection remains available for ambiguous or truncated input. `get_document()`
+returns the structured region document generated by the active adapter.
 
 ==============================================================================
 CURRENT SCOPE                                                    *agentlog-scope*
 
-The current implementation supports the Codex adapter and the Zellij
-scrollback workflow. Recognition is deliberately conservative: ambiguous text
-stays neutral instead of receiving a potentially incorrect semantic type.
+The current implementation supports Codex and Claude Code adapters and the
+Zellij scrollback workflow. Recognition is deliberately conservative:
+ambiguous text stays neutral instead of receiving a potentially incorrect
+semantic type.
 
-Navigation mappings, folding, copy commands, focus modes, and adapters for
-other agents are not yet implemented. Configuration fields reserved for those
-features should not be considered active until their corresponding behavior is
-documented here.
+Navigation mappings, folding, copy commands, focus modes, and additional agent
+adapters are not yet implemented. Configuration fields reserved for those
+features should not be considered active until their corresponding behavior
+is documented here.
 
 vim:tw=78:ts=8:noet:ft=help:norl:

@@ -60,6 +60,13 @@ function M.attach(bufnr, options)
   end
 
   local detection = options.detection
+  if not options.source and not detection then
+    local ok, candidate = pcall(detect.buffer, bufnr)
+    if ok and candidate and has_evidence(candidate, "agent_signature") then
+      detection = candidate
+    end
+  end
+
   local source = options.source or (detection and detection.source) or "codex"
   local transport = options.transport or (detection and detection.transport)
   local parsed_document = parse(bufnr, source, transport)
@@ -153,7 +160,7 @@ function M.configure_auto_attach()
       if
         not ok
         or not detection
-        or not has_evidence(detection, "codex_action")
+        or not has_evidence(detection, "agent_signature")
         or detection.confidence < config.get().min_confidence
       then
         return

@@ -1,6 +1,9 @@
 local M = {}
 
 local registry = {
+  claude = function()
+    return require("agentlog.adapters.claude")
+  end,
   codex = function()
     return require("agentlog.adapters.codex")
   end,

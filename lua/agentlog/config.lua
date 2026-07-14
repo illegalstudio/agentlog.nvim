@@ -5,6 +5,7 @@ M.defaults = {
   auto_attach = false,
   min_confidence = 0.75,
   adapters = {
+    claude = { enabled = true },
     codex = { enabled = true },
   },
   render = {

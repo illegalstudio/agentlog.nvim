@@ -179,6 +179,9 @@ function M.apply(bufnr, parsed_document, namespace)
       if group.has_delete then
         sides[#sides + 1] = "old"
       end
+      if #sides == 0 then
+        sides[#sides + 1] = "new"
+      end
 
       for _, side in ipairs(sides) do
         local snapshot = build_snapshot(group, side)

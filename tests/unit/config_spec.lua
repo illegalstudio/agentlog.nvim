@@ -7,6 +7,7 @@ return {
 
     h.falsy(config.get().auto_attach)
     h.eq(0.75, config.get().min_confidence)
+    h.truthy(config.get().adapters.claude.enabled)
     h.truthy(config.get().adapters.codex.enabled)
   end),
 

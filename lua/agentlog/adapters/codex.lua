@@ -39,6 +39,13 @@ end
 local function action_label(line)
   local candidate = action_text(line)
 
+  if
+    candidate:match("^Ran %d+ shell commands?")
+    or candidate:match("^Searched for %d+ patterns?")
+  then
+    return nil
+  end
+
   for _, label in ipairs(action_labels) do
     if
       candidate == label
@@ -135,6 +142,7 @@ function M.detect(lines, context)
   local action_count = vim.tbl_count(distinct_actions)
   if action_count > 0 then
     add_evidence(result, "codex_action", 0.45)
+    add_evidence(result, "agent_signature", 0)
   end
   if action_count > 1 then
     add_evidence(result, "multiple_action_types", 0.15)

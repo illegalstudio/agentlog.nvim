@@ -27,9 +27,9 @@ Structured region document
     └── Contextual syntax renderer
 ```
 
-Manual attachment selects the Codex adapter directly. Automatic attachment first
-scores enabled adapters and proceeds only when the configured confidence threshold
-is met.
+Manual attachment scores enabled adapters and selects the best source carrying an
+explicit agent signature, falling back to Codex when no signature is available.
+Automatic attachment additionally requires the configured confidence threshold.
 
 ## Module boundaries
 
@@ -67,8 +67,9 @@ Adapters produce documents containing normalized regions:
 Rows use Neovim's zero-based indexing. A region owns semantic metadata but does
 not render itself. Renderers consume the same document independently.
 
-Current region kinds include actions, output, file references, unified-diff
-headers and hunks, compact diff rows, errors, warnings, and unknown text.
+Current region kinds include prompts, responses, actions, output, interface
+metadata, file references, unified-diff headers and hunks, compact diff rows,
+errors, warnings, and unknown text.
 
 ## Attachment lifecycle
 
@@ -115,6 +116,24 @@ Compact rows carry enough metadata to render each visual layer separately:
 The original prefix remains in the buffer. Column metadata lets renderers operate
 on the meaningful parts without rewriting the line.
 
+## Claude adapter
+
+The Claude adapter recognizes:
+
+- the Claude Code banner and interface metadata;
+- user prompts, assistant responses, warnings, and progress rows;
+- tool calls and their structured output;
+- shell-command and search summaries;
+- `Update` compact diffs;
+- numbered `Write` and `Read` source previews.
+
+`Update` rows use the same normalized compact-diff metadata as Codex. A `Write`
+preview has line numbers and source but no visual diff marker, so it is modeled as
+added source with `marker_col = nil`. This enables Tree-sitter and muted added-line
+backgrounds without inserting artificial padding. Tool state survives blank rows
+and wrapped result paths before the numbered source begins. `Read` previews are
+contextual source and do not receive an added/deleted background.
+
 ## Rendering layers
 
 All decorations use one dedicated namespace. Compact diff rows are rendered as
@@ -150,14 +169,14 @@ advanced parsing.
 ## Detection
 
 The detector samples at most the first 2,000 lines and combines independent
-signals such as Codex actions, structured output, diff formats, dump extension,
-temporary or Zellij paths, and readonly state. A filename alone is insufficient
-for a confident attachment.
+signals such as Codex actions, the Claude banner and turn markers, structured
+tool output, code previews, dump extension, temporary or Zellij paths, and
+readonly state. A filename alone is insufficient for a confident attachment.
 
 Automatic attachment is limited to normal `*.dump` buffers and requires both a
-Codex action signature and the configured confidence score. It is off by default
-while the fixture corpus grows. `vim.b.agentlog_disable = true` opts one buffer
-out without disabling manual attachment.
+supported agent signature and the configured confidence score. It is off by
+default while the fixture corpus grows. `vim.b.agentlog_disable = true` opts one
+buffer out without disabling manual attachment.
 
 ## Extension points
 

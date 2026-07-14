@@ -86,6 +86,45 @@ return {
     vim.api.nvim_buf_delete(bufnr, { force = true })
   end),
 
+  h.test("Claude Write previews render source without virtual diff padding", function()
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    local lines = {
+      "⏺ Write(/tmp/example.lua)",
+      "",
+      "  ⎿ Wrote 2 lines to",
+      "     /tmp/example.lua",
+      "       1 local answer = 42",
+      "       2 return answer",
+    }
+
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+    local before = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local parsed = agentlog.attach(bufnr)
+    local marks =
+      vim.api.nvim_buf_get_extmarks(bufnr, render.namespace(), 0, -1, { details = true })
+    local groups = {}
+    local has_padding = false
+
+    for _, mark in ipairs(marks) do
+      local details = mark[4]
+      if details.hl_group then
+        groups[details.hl_group] = true
+      end
+      has_padding = has_padding or details.virt_text_pos == "inline"
+    end
+
+    h.eq("claude", parsed.source)
+    h.eq("claude", vim.b[bufnr].agentlog_source)
+    h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
+    h.truthy(groups.AgentlogDiffLineNumber)
+    h.truthy(groups.AgentlogDiffAddBackground)
+    h.truthy(groups["@keyword.lua"])
+    h.falsy(has_padding)
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end),
+
   h.test("structural diff highlighting survives when syntax is disabled", function()
     agentlog.setup({ syntax = { enabled = false } })
     local bufnr = vim.api.nvim_create_buf(false, true)
@@ -143,6 +182,20 @@ return {
     agentlog.detach(positive_buffer)
     vim.api.nvim_buf_delete(positive_buffer, { force = true })
     vim.fn.delete(positive_path)
+
+    local claude_path, claude_buffer = open_dump({
+      "❯ Create an example module",
+      "⏺ Write(/tmp/example.lua)",
+      "",
+      "  ⎿ Wrote 1 line to",
+      "     /tmp/example.lua",
+      "       1 return true",
+    }, false)
+    h.truthy(agentlog.is_attached(claude_buffer))
+    h.eq("claude", vim.b[claude_buffer].agentlog_source)
+    agentlog.detach(claude_buffer)
+    vim.api.nvim_buf_delete(claude_buffer, { force = true })
+    vim.fn.delete(claude_path)
 
     local negative_path, negative_buffer = open_dump({ "ordinary server log" }, false)
     h.falsy(agentlog.is_attached(negative_buffer))

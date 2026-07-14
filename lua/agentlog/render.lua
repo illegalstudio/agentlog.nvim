@@ -77,7 +77,7 @@ local function render_diff(bufnr, region, line)
   end
 
   local padding = math.max(0, math.floor(tonumber(config.get().render.diff_code_padding) or 0))
-  if padding > 0 and metadata.content_col then
+  if padding > 0 and metadata.content_col and metadata.marker_col then
     local padding_group = "Normal"
     if config.get().render.diff_background and metadata.line_type == "add" then
       padding_group = "AgentlogDiffAddBackground"
