@@ -60,10 +60,16 @@ return {
     local marks =
       vim.api.nvim_buf_get_extmarks(bufnr, render.namespace(), 0, -1, { details = true })
     local groups = {}
+    local padding
 
     for _, mark in ipairs(marks) do
       local details = mark[4]
-      groups[details.hl_group] = (groups[details.hl_group] or 0) + 1
+      if details.hl_group then
+        groups[details.hl_group] = (groups[details.hl_group] or 0) + 1
+      end
+      if details.virt_text and details.virt_text_pos == "inline" then
+        padding = details.virt_text[1][1]
+      end
     end
 
     h.truthy(groups.AgentlogDiffLineNumber)
@@ -71,6 +77,7 @@ return {
     h.truthy(groups.AgentlogDiffAddBackground)
     h.truthy(groups["@keyword.lua"])
     h.truthy(groups["@number.lua"])
+    h.eq(" ", padding)
     h.eq({}, syntax.get_errors(bufnr))
 
     agentlog.detach(bufnr)
@@ -92,7 +99,9 @@ return {
     local groups = {}
 
     for _, mark in ipairs(marks) do
-      groups[mark[4].hl_group] = true
+      if mark[4].hl_group then
+        groups[mark[4].hl_group] = true
+      end
     end
 
     h.truthy(groups.AgentlogDiffLineNumber)

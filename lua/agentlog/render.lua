@@ -76,6 +76,25 @@ local function render_diff(bufnr, region, line)
       )
   end
 
+  local padding = math.max(0, math.floor(tonumber(config.get().render.diff_code_padding) or 0))
+  if padding > 0 and metadata.content_col then
+    local padding_group = "Normal"
+    if config.get().render.diff_background and metadata.line_type == "add" then
+      padding_group = "AgentlogDiffAddBackground"
+    elseif config.get().render.diff_background and metadata.line_type == "delete" then
+      padding_group = "AgentlogDiffDeleteBackground"
+    end
+
+    vim.api.nvim_buf_set_extmark(bufnr, namespace, region.start_row, metadata.content_col, {
+      virt_text = { { string.rep(" ", padding), padding_group } },
+      virt_text_pos = "inline",
+      hl_mode = "combine",
+      priority = 90,
+      strict = false,
+    })
+    count = count + 1
+  end
+
   if config.get().render.diff_background and metadata.content_col then
     local background_group
     if metadata.line_type == "add" then

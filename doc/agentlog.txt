@@ -28,6 +28,7 @@ is present on 'runtimepath'.
       min_confidence = 0.75,
       render = {
         diff_background = true,
+        diff_code_padding = 1,
       },
       syntax = {
         enabled = true,
@@ -37,7 +38,8 @@ is present on 'runtimepath'.
     })
 <
 Automatic attachment is experimental and disabled by default while the fixture
-corpus is being assembled.
+corpus is being assembled. `diff_code_padding` is measured in terminal cells
+and uses virtual text, so it does not alter the buffer or copied content.
 
 ==============================================================================
 COMMANDS                                                      *agentlog-commands*

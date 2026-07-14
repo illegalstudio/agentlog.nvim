@@ -9,6 +9,7 @@ M.defaults = {
   },
   render = {
     diff_background = true,
+    diff_code_padding = 1,
     conceal_noise = false,
     virtual_text = true,
   },

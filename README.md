@@ -54,6 +54,7 @@ require("agentlog").setup({
   auto_attach = false,
   render = {
     diff_background = true,
+    diff_code_padding = 1,
   },
   syntax = {
     enabled = true,
@@ -66,7 +67,8 @@ require("agentlog").setup({
 For Codex `Edited` blocks, agentlog separates line numbers and diff markers from
 the source, infers the language from the file path, and parses normalized old and
 new snapshots. If a parser or highlight query is unavailable, structural diff
-highlighting continues to work.
+highlighting continues to work. `diff_code_padding` inserts virtual screen cells,
+so the extra spacing never changes copied text.
 
 ## Development
 
