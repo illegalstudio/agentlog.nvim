@@ -130,9 +130,13 @@ available, the `gf` mapping delegates to Neovim's native command.
 
 If direct resolution fails for a Cursor reference containing only a basename,
 file opening searches recursively under the Cursor workspace root, falling back
-to the current Git root or working directory. The search stops after two matches:
-one match is opened, while multiple matches return an ambiguity error without
-choosing a file. Other adapters and references containing path separators do not
+to the current Git root or working directory. The initial search stops after two
+matches so unique references remain cheap. One match is opened immediately; for
+multiple matches the complete sorted candidate set is returned with the original
+location. The default `gf` mapping presents those candidates through
+`vim.ui.select`, displays paths relative to the project root, and opens the
+selection while preserving recognized line and column coordinates. Cancelling
+does nothing. Other adapters and references containing path separators do not
 use this fallback.
 
 ## Codex adapter

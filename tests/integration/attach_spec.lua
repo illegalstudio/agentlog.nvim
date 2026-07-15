@@ -171,9 +171,11 @@ return {
     h.eq(1, vim.fn.mkdir(root .. "/tests/Feature", "p"))
     h.eq(1, vim.fn.mkdir(root .. "/app/First", "p"))
     h.eq(1, vim.fn.mkdir(root .. "/app/Second", "p"))
+    h.eq(1, vim.fn.mkdir(root .. "/app/Third", "p"))
     h.eq(0, vim.fn.writefile({ "<?php" }, unique_path))
     h.eq(0, vim.fn.writefile({ "first" }, root .. "/app/First/Duplicate.php"))
     h.eq(0, vim.fn.writefile({ "second" }, root .. "/app/Second/Duplicate.php"))
+    h.eq(0, vim.fn.writefile({ "third" }, root .. "/app/Third/Duplicate.php"))
 
     local bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
@@ -201,10 +203,48 @@ return {
     vim.api.nvim_set_current_buf(bufnr)
     vim.api.nvim_buf_delete(opened_buffer, { force = true })
     vim.api.nvim_win_set_cursor(0, { 6, 0 })
-    local resolved, message, reason = agentlog.open_file(bufnr)
+    local resolved, message, reason, details = agentlog.open_file(bufnr)
     h.eq(nil, resolved)
     h.eq("ambiguous", reason)
     h.truthy(message:find("multiple files named Duplicate.php", 1, true))
+    h.eq(root, details.root)
+    h.eq(3, #details.candidates)
+    h.eq(bufnr, vim.api.nvim_get_current_buf())
+
+    local original_select = vim.ui.select
+    local picker_items
+    local picker_options
+    vim.ui.select = function(items, options, on_choice)
+      picker_items = items
+      picker_options = options
+      on_choice(items[2], 2)
+    end
+    local selected, select_error = pcall(vim.cmd, "normal gf")
+    vim.ui.select = original_select
+    if not selected then
+      error(select_error)
+    end
+
+    h.eq("Select Duplicate.php:", picker_options.prompt)
+    h.eq("app/First/Duplicate.php", picker_options.format_item(picker_items[1]))
+    h.eq("app/Second/Duplicate.php", picker_options.format_item(picker_items[2]))
+    h.eq("app/Third/Duplicate.php", picker_options.format_item(picker_items[3]))
+    opened_buffer = vim.api.nvim_get_current_buf()
+    h.eq(
+      vim.uv.fs_realpath(root .. "/app/Second/Duplicate.php"),
+      vim.uv.fs_realpath(vim.api.nvim_buf_get_name(opened_buffer))
+    )
+
+    vim.api.nvim_set_current_buf(bufnr)
+    vim.api.nvim_buf_delete(opened_buffer, { force = true })
+    vim.ui.select = function(_, _, on_choice)
+      on_choice(nil, nil)
+    end
+    selected, select_error = pcall(vim.cmd, "normal gf")
+    vim.ui.select = original_select
+    if not selected then
+      error(select_error)
+    end
     h.eq(bufnr, vim.api.nvim_get_current_buf())
 
     agentlog.detach(bufnr)

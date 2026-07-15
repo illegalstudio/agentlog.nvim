@@ -166,7 +166,8 @@ resolved against the session workspace root when available, then the current Git
 root and working directory. Recognized line and column coordinates position the
 cursor after opening the file. When Cursor reports only a filename and direct
 resolution fails, agentlog searches that filename recursively from the project
-root and opens it only when exactly one match exists.
+root. One match opens immediately; multiple matches are presented through
+`vim.ui.select` with project-relative labels.
 
 For Codex `Edited`, `Added`, and `Deleted` blocks, Claude `Update` blocks, and
 Cursor `Edited` previews, agentlog separates display prefixes and diff markers

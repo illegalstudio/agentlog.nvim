@@ -352,7 +352,16 @@ local function resolve_cursor_basename(path, parsed_document, cwd)
     return vim.fs.normalize(matches[1])
   end
   if #matches > 1 then
-    return nil, "ambiguous", root
+    matches = vim.fs.find(path, {
+      path = root,
+      type = "file",
+      limit = math.huge,
+    })
+    table.sort(matches)
+    return nil, "ambiguous", {
+      candidates = matches,
+      root = root,
+    }
   end
 end
 
@@ -410,31 +419,47 @@ local function move_to_location(winid, location)
   vim.api.nvim_win_set_cursor(winid, { line, column })
 end
 
-function M.open_file(bufnr, parsed_document)
+function M.open_file(bufnr, parsed_document, options)
+  options = options or {}
   local winid = buffer_window(bufnr)
-  local row = vim.api.nvim_win_get_cursor(winid)[1] - 1
-  local location = M.location_at(parsed_document, row)
+  local location = options.location
+  if not location then
+    local row = vim.api.nvim_win_get_cursor(winid)[1] - 1
+    location = M.location_at(parsed_document, row)
+  end
   if not location or not location.path or location.path == "" then
     return nil, "no recognized file at cursor", "no_file"
   end
 
-  local cwd = vim.api.nvim_win_call(winid, function()
-    return vim.fn.getcwd()
-  end)
-  local resolved, resolution_error, search_root = resolve_path(
-    location.path,
-    parsed_document,
-    cwd
-  )
+  local resolved = options.resolved_path
+  local resolution_error
+  local resolution_details
+  if resolved then
+    resolved = vim.fs.normalize(resolved)
+  else
+    local cwd = vim.api.nvim_win_call(winid, function()
+      return vim.fn.getcwd()
+    end)
+    resolved, resolution_error, resolution_details = resolve_path(
+      location.path,
+      parsed_document,
+      cwd
+    )
+  end
+
   if not resolved then
     if resolution_error == "ambiguous" then
       local message = ("multiple files named %s found under %s"):format(
         location.path,
-        search_root
+        resolution_details.root
       )
-      return nil, message, "ambiguous"
+      resolution_details.location = location
+      return nil, message, "ambiguous", resolution_details
     end
     return nil, ("file does not exist: %s"):format(location.path), "not_found"
+  end
+  if not existing_path(resolved) then
+    return nil, ("file does not exist: %s"):format(resolved), "not_found"
   end
 
   vim.api.nvim_win_call(winid, function()

@@ -138,20 +138,35 @@ The second path must retain semantic diff highlighting without raising an error.
 Behavior changes should update the user manual and internal documentation when
 they affect both audiences.
 
-## Near-term priorities
+## Follow-up roadmap
 
-1. Grow the anonymized Codex, Claude, and Cursor fixture corpus.
-2. Cover more compact diff and truncated-scrollback variants.
-3. Complete the navigation follow-ups below.
-4. Add folding and copy commands without mutating buffer text.
-5. Enable automatic attachment only after broader negative detection coverage.
-
-## Navigation follow-ups
-
-Navigation currently covers actions, changed diff blocks, assistant responses,
-file occurrences, explicit unified-diff hunks, errors/warnings, and structured
-file opening. Follow-up work should add:
-
-1. contextual `<CR>` behavior after folding exists, so opening a file and
-   expanding a block are unambiguous;
-2. tests for mapping changes applied to buffers that are already attached.
+- [ ] Add semantic folding for long command output, diffs, todo lists, and full
+  turns, with useful fold text derived from region metadata.
+- [ ] Add normalized copy commands for responses, code, diffs, and command
+  output without copying TUI borders, line numbers, or visual prefixes.
+- [ ] Add a dependency-free session outline built on `vim.ui.select`, with
+  optional integrations for external pickers.
+- [x] Let `gf` present ambiguous Cursor basename matches instead of stopping
+  after reporting the ambiguity.
+- [ ] Add focus modes for responses, diffs, errors, and files without mutating
+  the source buffer.
+- [ ] Add contextual `<CR>` behavior after folding exists, so expanding a block
+  and opening a file remain unambiguous.
+- [ ] Add `:AgentlogInspect` for detection evidence, adapter confidence, and
+  region metadata under the cursor.
+- [ ] Cache semantic navigation indexes during attach and refresh for very large
+  scrollback buffers.
+- [ ] Add optional automatic refresh for dump files that change on disk while
+  preserving cursor position and fold state.
+- [ ] Expose a public adapter-registration API so additional agents can be
+  supported without modifying the core adapter registry.
+- [ ] Expose session summaries such as workspace, branch, and action/diff/file/
+  diagnostic counts for statusline and winbar integrations.
+- [ ] Grow the anonymized real-session corpus across agent versions, compact
+  diff variants, truncated scrollback, and negative detection cases.
+- [ ] Add clean Markdown export for a session or selected semantic region.
+- [ ] Either implement or remove reserved configuration fields such as
+  `folding`, `conceal_noise`, and `virtual_text` before treating them as public
+  behavior.
+- [ ] Test configuration and mapping changes applied to buffers that are already
+  attached.

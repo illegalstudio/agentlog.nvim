@@ -53,12 +53,56 @@ local function run_navigation_mapping(bufnr, kind, direction)
   end
 end
 
+local function candidate_label(candidate, root)
+  local prefix = root:gsub("/+$", "") .. "/"
+  if candidate:sub(1, #prefix) == prefix then
+    return candidate:sub(#prefix + 1)
+  end
+  return candidate
+end
+
+local function select_ambiguous_file(bufnr, details)
+  local selected, select_error = pcall(vim.ui.select, details.candidates, {
+    prompt = ("Select %s:"):format(details.location.path),
+    kind = "agentlog_file",
+    format_item = function(candidate)
+      return candidate_label(candidate, details.root)
+    end,
+  }, function(choice)
+    if not choice then
+      return
+    end
+
+    local state = states[bufnr]
+    if not state then
+      notify("buffer is no longer attached", vim.log.levels.WARN)
+      return
+    end
+
+    local ok, path, message = pcall(navigation.open_file, bufnr, state.document, {
+      location = details.location,
+      resolved_path = choice,
+    })
+    if not ok then
+      notify(path, vim.log.levels.ERROR)
+    elseif not path then
+      notify(message, vim.log.levels.WARN)
+    end
+  end)
+
+  if not selected then
+    notify(select_error, vim.log.levels.ERROR)
+  end
+end
+
 local function run_open_file_mapping(bufnr)
-  local ok, path, message, reason = pcall(M.open_file, bufnr)
+  local ok, path, message, reason, details = pcall(M.open_file, bufnr)
   if not ok then
     notify(path, vim.log.levels.ERROR)
   elseif path then
     return
+  elseif reason == "ambiguous" and details then
+    select_ambiguous_file(bufnr, details)
   elseif reason == "no_file" then
     local native_ok, native_error = pcall(vim.cmd, "normal! gf")
     if not native_ok then
