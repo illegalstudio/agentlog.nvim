@@ -206,7 +206,8 @@ independent layers:
 
 Muted backgrounds are derived from the active colorscheme's standard diff groups.
 The padding uses inline virtual text in `replace` mode, so it has the same muted
-background and never changes copied content.
+background and never changes copied content. Cursor previews already encode
+separator spacing after `▎`, so their renderer path skips configured padding.
 
 ## Contextual Tree-sitter highlighting
 

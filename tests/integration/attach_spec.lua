@@ -343,6 +343,7 @@ return {
   end),
 
   h.test("Cursor fixture attaches, navigates, and refreshes without mutation", function()
+    agentlog.setup({ render = { diff_code_padding = 4 } })
     local lines = vim.fn.readfile("tests/fixtures/cursor/session.dump")
     local bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
@@ -353,6 +354,14 @@ return {
     local parsed = agentlog.attach(bufnr)
     h.eq("cursor", parsed.source)
     h.eq("cursor", vim.b[bufnr].agentlog_source)
+
+    local marks =
+      vim.api.nvim_buf_get_extmarks(bufnr, render.namespace(), 0, -1, { details = true })
+    local has_padding = false
+    for _, mark in ipairs(marks) do
+      has_padding = has_padding or mark[4].virt_text_pos == "inline"
+    end
+    h.falsy(has_padding)
 
     vim.api.nvim_win_set_cursor(0, { 1, 0 })
     vim.cmd("AgentlogNext diff")
@@ -366,6 +375,7 @@ return {
 
     agentlog.detach(bufnr)
     vim.api.nvim_buf_delete(bufnr, { force = true })
+    agentlog.setup()
   end),
 
   h.test("automatic attachment is conservative and supports a buffer opt-out", function()

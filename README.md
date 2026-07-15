@@ -170,7 +170,8 @@ old and new snapshots. Claude `Write` previews receive the same syntax
 highlighting without inventing a diff marker or visual padding. If a parser or
 highlight query is unavailable, structural highlighting continues to work.
 `diff_code_padding` inserts virtual screen cells, so the extra spacing never
-changes copied text.
+changes copied text. Cursor previews preserve their native separator spacing and
+ignore this option.
 
 Cursor Agent's plain scrollback does not retain an explicit marker for every
 prompt and response. The adapter recognizes turn boundaries supported by the

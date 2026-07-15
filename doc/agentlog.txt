@@ -206,7 +206,8 @@ supported. Compact diff rows are split into independent visual layers:
 - Tree-sitter captures for the source language.
 
 `diff_code_padding` is measured in terminal cells, not pixels. Padding uses
-inline virtual text and therefore does not affect copied text.
+inline virtual text and therefore does not affect copied text. Cursor previews
+keep their native separator spacing and ignore this option.
 
 Syntax highlighting ~
 
@@ -283,6 +284,7 @@ CONFIGURATION                                                  *agentlog-config*
 `render.diff_code_padding` ~
         Non-negative integer, default 1. Number of virtual terminal cells
         inserted between the diff marker and source code. Use 0 to disable.
+        Cursor previews always keep their native spacing and ignore this value.
 
                                                 *agentlog-syntax-enabled*
 `syntax.enabled` ~
