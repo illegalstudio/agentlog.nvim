@@ -7,6 +7,9 @@ local registry = {
   codex = function()
     return require("agentlog.adapters.codex")
   end,
+  cursor = function()
+    return require("agentlog.adapters.cursor")
+  end,
 }
 
 local loaded = {}

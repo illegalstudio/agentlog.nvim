@@ -178,6 +178,21 @@ backgrounds without inserting artificial padding. Tool state survives blank rows
 and wrapped result paths before the numbered source begins. `Read` previews are
 contextual source and do not receive an added/deleted background.
 
+## Cursor Agent adapter
+
+The Cursor adapter recognizes the CLI banner and version, read/search/edit and
+shell actions, collapsed output, todo progress, file references, command output,
+and footer interface rows. `Edited` previews use `▎` as a structural border and
+carry normalized context/add/delete metadata without modifying the visible text.
+Truncated preview paths are retained as `display_path` only, so navigation never
+tries to open a path Cursor has abbreviated with an ellipsis.
+
+Cursor's plain scrollback does not preserve a textual prompt/response marker on
+every turn. The first prompt after the banner and the first top-level prose after
+known tool activity are classified when the state machine can prove the boundary;
+later ambiguous prose remains `unknown`. This keeps response navigation useful
+without guessing that every paragraph starts a new turn.
+
 ## Rendering layers
 
 All decorations use one dedicated namespace. Compact diff rows are rendered as
@@ -213,9 +228,10 @@ advanced parsing.
 ## Detection
 
 The detector samples at most the first 2,000 lines and combines independent
-signals such as Codex actions, the Claude banner and turn markers, structured
-tool output, code previews, dump extension, temporary or Zellij paths, and
-readonly state. A filename alone is insufficient for a confident attachment.
+signals such as Codex actions, Claude's banner and turn markers, Cursor's banner
+and version, structured tool output, code previews, dump extension, temporary or
+Zellij paths, and readonly state. A filename alone is insufficient for a
+confident attachment.
 
 Automatic attachment is limited to normal `*.dump` buffers and requires both a
 supported agent signature and the configured confidence score. It is off by

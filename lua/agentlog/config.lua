@@ -7,6 +7,7 @@ M.defaults = {
   adapters = {
     claude = { enabled = true },
     codex = { enabled = true },
+    cursor = { enabled = true },
   },
   render = {
     diff_background = true,

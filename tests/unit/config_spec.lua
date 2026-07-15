@@ -9,6 +9,7 @@ return {
     h.eq(0.75, config.get().min_confidence)
     h.truthy(config.get().adapters.claude.enabled)
     h.truthy(config.get().adapters.codex.enabled)
+    h.truthy(config.get().adapters.cursor.enabled)
     h.truthy(config.get().navigation.wrap)
     h.eq("]a", config.get().mappings.next_action)
     h.eq("[a", config.get().mappings.previous_action)

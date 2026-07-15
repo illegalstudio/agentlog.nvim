@@ -22,7 +22,7 @@ Tests currently cover:
 - configuration defaults and merging;
 - region validation;
 - language inference;
-- Codex and Claude detection and parsing;
+- Codex, Claude, and Cursor detection and parsing;
 - compact and unified diff metadata;
 - attach, refresh, and detach integrity;
 - layered diff extmarks;
@@ -77,9 +77,10 @@ Fixtures must come from representative sessions, but they must be anonymized
 before commit. Remove credentials, client names, personal paths, proprietary
 source, and unrelated output.
 
-See the Codex and Claude notes under [`tests/fixtures/`](../tests/fixtures/) for
-the fixture checklist and captured formats. Small synthetic inputs are acceptable
-in unit tests but must not be presented as representative captured sessions.
+See the Codex, Claude, and Cursor notes under
+[`tests/fixtures/`](../tests/fixtures/) for the fixture checklist and captured
+formats. Small synthetic inputs are acceptable in unit tests but must not be
+presented as representative captured sessions.
 
 When adding a new output variant:
 
@@ -137,7 +138,7 @@ they affect both audiences.
 
 ## Near-term priorities
 
-1. Grow the anonymized Codex and Claude fixture corpus.
+1. Grow the anonymized Codex, Claude, and Cursor fixture corpus.
 2. Cover more compact diff and truncated-scrollback variants.
 3. Complete the navigation follow-ups below.
 4. Add folding and copy commands without mutating buffer text.

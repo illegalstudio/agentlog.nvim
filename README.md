@@ -20,19 +20,19 @@
 </p>
 
 <p align="center">
-  agentlog.nvim turns terminal scrollback produced by AI agents - Codex and
-  Claude Code, opened from Zellij - into a structured, navigable Neovim buffer
-  without changing its original text.
+  agentlog.nvim turns terminal scrollback produced by AI agents - Codex, Claude
+  Code, and Cursor Agent, opened from Zellij - into a structured, navigable
+  Neovim buffer without changing its original text.
 </p>
 
 ---
 
 ## Why agentlog?
 
-I spend a lot of time running AI coding agents - usually Codex and Claude Code -
-inside Zellij. When I need to jump back through their history or copy part of an
-agent's output, I prefer to stay on the keyboard: `Ctrl+S`, then `E`, opens the
-active pane's scrollback in my default editor, Neovim.
+I spend a lot of time running AI coding agents - usually Codex, Claude Code, and
+Cursor Agent - inside Zellij. When I need to jump back through their history or
+copy part of an agent's output, I prefer to stay on the keyboard: `Ctrl+S`, then
+`E`, opens the active pane's scrollback in my default editor, Neovim.
 
 That workflow is fast, but raw agent scrollback is not especially pleasant to
 read. Prose, tool calls, code, and diffs all compete for attention in what is
@@ -76,7 +76,8 @@ pane's scrollback in your default editor. Once the buffer is open, run:
 :AgentlogAttach
 ```
 
-The command detects the matching Codex or Claude adapter from the buffer.
+The command detects the matching Codex, Claude Code, or Cursor Agent adapter
+from the buffer.
 
 The initial commands are:
 
@@ -92,6 +93,11 @@ Automatic attachment is off by default:
 ```lua
 require("agentlog").setup({
   -- auto_attach = true, -- Uncomment to enable automatic attachment.
+  adapters = {
+    claude = { enabled = true },
+    codex = { enabled = true },
+    cursor = { enabled = true },
+  },
   render = {
     diff_background = true,
     diff_code_padding = 1,
@@ -124,7 +130,7 @@ require("agentlog").setup({
 ```
 
 When enabled, automatic attachment considers only `*.dump` files with a strong
-Codex or Claude signature and enough independent evidence. Set
+Codex, Claude Code, or Cursor Agent signature and enough independent evidence. Set
 `vim.b.agentlog_disable = true` before `BufReadPost` to opt a buffer out.
 
 ## Navigation
@@ -148,8 +154,8 @@ one destination; read-only source previews are not treated as changes.
 File navigation still includes those read-only previews and groups all rows from
 one structured file operation into a single destination.
 Hunk navigation visits each `@@ … @@` section within a unified diff. Compact
-Codex and Claude previews do not expose hunk headers, so agentlog does not invent
-extra boundaries for them.
+Codex, Claude, and Cursor previews do not expose hunk headers, so agentlog does
+not invent extra boundaries for them.
 
 Mappings are installed only when the same key is not already mapped locally in
 the attached buffer, and detach removes only mappings installed by agentlog.
@@ -157,14 +163,19 @@ Set `mappings.enabled = false` to disable all defaults, or replace any individua
 mapping in `setup()`. `gf` falls back to Neovim's native behavior when the cursor
 is not on a file recognized by the active adapter.
 
-For Codex `Edited`, `Added`, and `Deleted` blocks and Claude `Update` blocks,
-agentlog separates line numbers and diff markers from the source, infers the
-language from the file path, and parses normalized old and new snapshots. Claude
-`Write` previews receive the same syntax highlighting without inventing a diff
-marker or visual padding. If a parser or highlight query is unavailable,
-structural highlighting continues to work.
+For Codex `Edited`, `Added`, and `Deleted` blocks, Claude `Update` blocks, and
+Cursor `Edited` previews, agentlog separates display prefixes and diff markers
+from the source, infers the language from the file path, and parses normalized
+old and new snapshots. Claude `Write` previews receive the same syntax
+highlighting without inventing a diff marker or visual padding. If a parser or
+highlight query is unavailable, structural highlighting continues to work.
 `diff_code_padding` inserts virtual screen cells, so the extra spacing never
 changes copied text.
+
+Cursor Agent's plain scrollback does not retain an explicit marker for every
+prompt and response. The adapter recognizes turn boundaries supported by the
+banner and surrounding tool activity, and deliberately leaves ambiguous later
+turns neutral.
 
 ## Documentation
 
@@ -185,8 +196,9 @@ fixture notes under [`tests/fixtures/`](tests/fixtures/).
 
 ## Status
 
-The immediate next milestone is to expand the anonymized Codex and Claude fixture
-corpus, then add folding, copying, and coverage for additional output variants.
+The immediate next milestone is to expand the anonymized Codex, Claude, and
+Cursor fixture corpus, then add folding, copying, and coverage for additional
+output variants.
 
 ## License
 

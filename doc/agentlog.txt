@@ -18,8 +18,8 @@ CONTENTS                                                     *agentlog-contents*
 INTRODUCTION                                                    *agentlog-intro*
 
 agentlog.nvim turns AI-agent terminal scrollback into a structured Neovim
-buffer. The supported workflows are Codex and Claude Code scrollback opened
-from Zellij.
+buffer. The supported workflows are Codex, Claude Code, and Cursor Agent
+scrollback opened from Zellij.
 
 The adapters recognize prompts, responses, actions, command output, file
 references, and compact or unified diffs. Rendering is non-destructive:
@@ -51,6 +51,7 @@ is present on 'runtimepath'.
       adapters = {
         claude = { enabled = true },
         codex = { enabled = true },
+        cursor = { enabled = true },
       },
       render = {
         diff_background = true,
@@ -83,13 +84,14 @@ is present on 'runtimepath'.
     })
 <
 Automatic attachment is disabled by default. When enabled, only `*.dump` files
-with a strong Codex or Claude signature and enough independent evidence are
-attached. Manual attachment remains available for every buffer.
+with a strong Codex, Claude Code, or Cursor Agent signature and enough
+independent evidence are attached. Manual attachment remains available for
+every buffer.
 
 ==============================================================================
 USAGE                                                            *agentlog-usage*
 
-Open a Codex or Claude scrollback dump and run:
+Open a Codex, Claude Code, or Cursor Agent scrollback dump and run:
 >
     :AgentlogAttach
 <
@@ -185,15 +187,17 @@ Turns and actions ~
 Codex action headings such as `Ran`, `Edited`, `Added`, `Deleted`, `Explored`,
 `Read`, and `Searched` are emphasized. Claude user prompts, responses, tool
 calls, output, warnings, progress, and interface metadata receive separate
-semantic groups. Recognized file paths retain language and diff metadata.
+semantic groups. Cursor Agent actions, todo state, shell output, and interface
+rows use the same shared semantic groups. Recognized file paths retain language
+and diff metadata.
 
 Diffs ~
 
-Unified diffs, Codex's compact numbered format, and Claude `Update` previews
-are supported. Claude `Write` previews are treated as newly added numbered
-source without displaying a nonexistent marker. Blank rows and wrapped result
-paths between a Claude tool call and its source preview are supported. Compact
-diff rows are split into independent visual layers:
+Unified diffs, Codex's compact numbered format, Claude `Update` previews, and
+Cursor `Edited` previews are supported. Claude `Write` previews are treated as
+newly added numbered source without displaying a nonexistent marker. Blank rows
+and wrapped result paths between a Claude tool call and its source preview are
+supported. Compact diff rows are split into independent visual layers:
 
 - line number;
 - `+`, `-`, or context marker;
@@ -265,6 +269,10 @@ CONFIGURATION                                                  *agentlog-config*
 `adapters.codex.enabled` ~
         Boolean, default true. Enable the built-in Codex adapter.
 
+                                             *agentlog-adapters-cursor*
+`adapters.cursor.enabled` ~
+        Boolean, default true. Enable the built-in Cursor Agent adapter.
+
                                              *agentlog-diff-background*
 `render.diff_background` ~
         Boolean, default true. Add muted backgrounds to inserted and deleted
@@ -334,6 +342,7 @@ The command behavior is also available through Lua:
     agentlog.attach(bufnr)
     agentlog.attach(bufnr, { source = "claude" })
     agentlog.attach(bufnr, { source = "codex" })
+    agentlog.attach(bufnr, { source = "cursor" })
     agentlog.refresh(bufnr)
     agentlog.detach(bufnr)
     agentlog.is_attached(bufnr)
@@ -352,15 +361,16 @@ message when no destination exists. `open_file()` returns the resolved path.
 ==============================================================================
 CURRENT SCOPE                                                    *agentlog-scope*
 
-The current implementation supports Codex and Claude Code adapters and the
-Zellij scrollback workflow. Recognition is deliberately conservative:
-ambiguous text stays neutral instead of receiving a potentially incorrect
-semantic type.
+The current implementation supports Codex, Claude Code, and Cursor Agent
+adapters and the Zellij scrollback workflow. Recognition is deliberately
+conservative: ambiguous text stays neutral instead of receiving a potentially
+incorrect semantic type. Cursor's unmarked later conversational turns remain
+neutral unless surrounding tool activity proves their boundary.
 
 Navigation currently covers actions, changed diff blocks, explicit hunks,
 assistant responses, recognized files, errors, and warnings. Folding, copy
-commands, focus modes, and additional agent adapters are not yet implemented.
-Configuration fields reserved for those features should not be considered active
-until their corresponding behavior is documented here.
+commands, and focus modes are not yet implemented. Configuration fields reserved
+for those features should not be considered active until their corresponding
+behavior is documented here.
 
 vim:tw=78:ts=8:noet:ft=help:norl:

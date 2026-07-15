@@ -342,6 +342,32 @@ return {
     agentlog.setup()
   end),
 
+  h.test("Cursor fixture attaches, navigates, and refreshes without mutation", function()
+    local lines = vim.fn.readfile("tests/fixtures/cursor/session.dump")
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+    vim.api.nvim_set_option_value("modified", false, { buf = bufnr })
+    vim.api.nvim_set_current_buf(bufnr)
+
+    local before = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local parsed = agentlog.attach(bufnr)
+    h.eq("cursor", parsed.source)
+    h.eq("cursor", vim.b[bufnr].agentlog_source)
+
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+    vim.cmd("AgentlogNext diff")
+    h.eq(28, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal ]f")
+    h.eq(39, vim.api.nvim_win_get_cursor(0)[1])
+
+    agentlog.refresh(bufnr)
+    h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
+    h.falsy(vim.api.nvim_get_option_value("modified", { buf = bufnr }))
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end),
+
   h.test("automatic attachment is conservative and supports a buffer opt-out", function()
     agentlog.setup({ auto_attach = true })
 
@@ -384,6 +410,21 @@ return {
     agentlog.detach(claude_buffer)
     vim.api.nvim_buf_delete(claude_buffer, { force = true })
     vim.fn.delete(claude_path)
+
+    local cursor_path, cursor_buffer = open_dump({
+      "Cursor Agent",
+      "v2026.07.09-a3815c0",
+      "",
+      "Inspect this project",
+      "",
+      "$ pwd 0.1s",
+      "  /tmp/example",
+    }, false)
+    h.truthy(agentlog.is_attached(cursor_buffer))
+    h.eq("cursor", vim.b[cursor_buffer].agentlog_source)
+    agentlog.detach(cursor_buffer)
+    vim.api.nvim_buf_delete(cursor_buffer, { force = true })
+    vim.fn.delete(cursor_path)
 
     local negative_path, negative_buffer = open_dump({ "ordinary server log" }, false)
     h.falsy(agentlog.is_attached(negative_buffer))
