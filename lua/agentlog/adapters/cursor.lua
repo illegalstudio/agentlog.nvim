@@ -42,11 +42,15 @@ local function is_separator(line)
     or starts_with(candidate, "▀▀▀▀▀▀")
 end
 
+local function workspace_footer(line)
+  return trim(line):match("^(/.+)%s+·%s+[%w%._/-]+$")
+end
+
 local function is_footer(line)
   local candidate = trim(line)
   return starts_with(candidate, "→ Add a follow-up")
     or candidate:match("%sHigh%s+·%s+[%d%.]+%%") ~= nil
-    or candidate:match("^/.+%s+·%s+[%w%._/-]+$") ~= nil
+    or workspace_footer(line) ~= nil
 end
 
 local function is_todo(line)
@@ -80,6 +84,9 @@ local function usable_path(path)
   end
 
   if path:find("...", 1, true) or path:find("…", 1, true) then
+    return false
+  end
+  if path:match("^%a[%w+%.%-]*://") then
     return false
   end
 
@@ -155,6 +162,7 @@ local function read_action(candidate)
   metadata.action_type = "read"
   metadata.first_line = tonumber(first_line)
   metadata.last_line = tonumber(last_line)
+  metadata.target_line = tonumber(first_line)
   return metadata
 end
 
@@ -184,6 +192,16 @@ end
 local function file_reference(line)
   local candidate = trim(line)
   local path, first_line, last_line = candidate:match("^(.+)%s+lines%s+(%d+)%-(%d+)$")
+  local target_column
+
+  if not path then
+    path, first_line, target_column = candidate:match("^(.+):(%d+):(%d+)$")
+    last_line = first_line
+  end
+  if not path then
+    path, first_line = candidate:match("^(.+):(%d+)$")
+    last_line = first_line
+  end
   if not path or not usable_path(path) then
     return nil
   end
@@ -191,6 +209,8 @@ local function file_reference(line)
   local metadata = path_metadata(path)
   metadata.first_line = tonumber(first_line)
   metadata.last_line = tonumber(last_line)
+  metadata.target_line = tonumber(first_line)
+  metadata.target_column = tonumber(target_column)
   return metadata
 end
 
@@ -356,6 +376,7 @@ function M.parse(lines, context)
   local current_edit
   local current_shell_indent
   local next_operation_id = 0
+  local workspace_root
 
   local function recognize(row, kind, metadata, confidence)
     if unknown_start < row then
@@ -398,6 +419,7 @@ function M.parse(lines, context)
     local collapsed = collapsed_type(line)
     local preview = current_edit and preview_line(line) or nil
     local reference = file_reference(line)
+    local footer_root = workspace_footer(line)
 
     if is_header(line) then
       base_indent = leading_spaces(line)
@@ -413,6 +435,9 @@ function M.parse(lines, context)
     elseif is_separator(line) or is_footer(line) then
       current_edit = nil
       current_shell_indent = nil
+      if footer_root then
+        workspace_root = vim.fs.normalize(footer_root)
+      end
       recognize(row, "metadata", { metadata_type = "interface" }, 0.9)
     elseif is_todo(line) then
       current_edit = nil
@@ -478,6 +503,7 @@ function M.parse(lines, context)
     regions = regions,
     metadata = {
       line_count = #lines,
+      workspace_root = workspace_root,
     },
   })
 end

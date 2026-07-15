@@ -167,7 +167,10 @@ commands can return to the previous location.
 All rows belonging to one structured diff are one navigation target. Source
 previews containing only context, such as a Claude `Read`, are not considered
 changed diffs. `gf` uses the exact path stored by the adapter. When no adapter
-path is present at the cursor, Neovim's native |gf| behavior is used.
+path is present at the cursor, Neovim's native |gf| behavior is used. Relative
+paths are resolved against a detected session workspace, then the Git root of
+the current working directory, then the working directory itself. Recognized
+line and column coordinates are 1-based and position the cursor after opening.
 File navigation includes context-only previews and groups all regions sharing
 one structured file operation into a single target.
 Adjacent error and warning rows form one diagnostic target; separate diagnostic

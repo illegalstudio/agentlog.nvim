@@ -73,6 +73,7 @@ return {
 
   h.test("navigation mappings support counts, wrapping, commands, and file opening", function()
     local first_path = vim.fn.tempname() .. ".lua"
+    local expected_readme = vim.uv.fs_realpath("README.md")
     h.eq(0, vim.fn.writefile({ "return 1" }, first_path))
 
     local bufnr = vim.api.nvim_create_buf(false, true)
@@ -115,18 +116,53 @@ return {
     vim.api.nvim_buf_delete(opened_buffer, { force = true })
 
     vim.api.nvim_win_set_cursor(0, { 7, 0 })
+    local original_cwd = vim.fn.getcwd()
+    vim.cmd("lcd " .. vim.fn.fnameescape("lua"))
     vim.cmd("normal gf")
     opened_buffer = vim.api.nvim_get_current_buf()
     h.eq(
-      vim.uv.fs_realpath("README.md"),
+      expected_readme,
       vim.uv.fs_realpath(vim.api.nvim_buf_get_name(opened_buffer))
     )
+    vim.cmd("lcd " .. vim.fn.fnameescape(original_cwd))
 
     vim.api.nvim_set_current_buf(bufnr)
     vim.api.nvim_buf_delete(opened_buffer, { force = true })
     agentlog.detach(bufnr)
     vim.api.nvim_buf_delete(bufnr, { force = true })
     vim.fn.delete(first_path)
+  end),
+
+  h.test("Cursor file opening uses its workspace root and coordinates", function()
+    local root = vim.fn.tempname()
+    local path = root .. "/src/example.lua"
+    h.eq(1, vim.fn.mkdir(root .. "/src", "p"))
+    h.eq(0, vim.fn.writefile({ "one", "two", "abcdef", "four" }, path))
+
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "Cursor Agent",
+      "v2026.07.09-a3815c0",
+      "",
+      "src/example.lua:3:4",
+      "",
+      root .. " · main",
+    })
+    vim.api.nvim_set_current_buf(bufnr)
+    local parsed = agentlog.attach(bufnr)
+    h.eq(root, parsed.metadata.workspace_root)
+
+    vim.api.nvim_win_set_cursor(0, { 4, 0 })
+    vim.cmd("normal gf")
+    local opened_buffer = vim.api.nvim_get_current_buf()
+    h.eq(vim.uv.fs_realpath(path), vim.uv.fs_realpath(vim.api.nvim_buf_get_name(0)))
+    h.eq({ 3, 3 }, vim.api.nvim_win_get_cursor(0))
+
+    vim.api.nvim_set_current_buf(bufnr)
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(opened_buffer, { force = true })
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+    h.eq(0, vim.fn.delete(root, "rf"))
   end),
 
   h.test("response mappings and commands navigate Codex prose", function()

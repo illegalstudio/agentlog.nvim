@@ -119,9 +119,13 @@ The target search is independent of cursor movement and supports direction,
 counts, and optional wrapping. The final move uses a normal line jump inside the
 buffer's window so Neovim records it in the jump list.
 
-File opening uses only `metadata.path` from a region containing the cursor. The
-path is normalized relative to Neovim's current working directory and must exist
-before `:edit` is called with an escaped filename. When no structured path is
+File opening reads `metadata.path` and optional 1-based target coordinates from
+the region containing the cursor. Relative paths are tried against, in order,
+`document.metadata.workspace_root`, the Git root above Neovim's working
+directory, and the working directory itself. Absolute paths bypass these roots.
+The selected path must exist before `:edit` is called with an escaped filename.
+After opening, `target_line`/`target_column`, `first_line`, or a compact preview's
+`line_number` position the cursor when present. When no structured path is
 available, the `gf` mapping delegates to Neovim's native command.
 
 ## Codex adapter
@@ -186,6 +190,10 @@ and footer interface rows. `Edited` previews use `▎` as a structural border an
 carry normalized context/add/delete metadata without modifying the visible text.
 Truncated preview paths are retained as `display_path` only, so navigation never
 tries to open a path Cursor has abbreviated with an ellipsis.
+
+The workspace-and-branch footer supplies `document.metadata.workspace_root`.
+Cursor `lines N-M` references store the first line as `target_line`; references
+formatted as `path:line:column` also store `target_column`.
 
 Cursor's plain scrollback does not preserve a textual prompt/response marker on
 every turn. The first prompt after the banner and the first top-level prose after

@@ -2,6 +2,10 @@ local document = require("agentlog.document")
 
 local M = {}
 
+local function starts_with(value, prefix)
+  return value:sub(1, #prefix) == prefix
+end
+
 local navigation_kinds = {
   action = true,
   diff = true,
@@ -272,32 +276,124 @@ function M.goto_region(bufnr, parsed_document, kind, direction, count, wrap)
   return target
 end
 
-function M.path_at(parsed_document, row)
-  local path
+local function positive_integer(value)
+  if type(value) == "number" and value >= 1 and value % 1 == 0 then
+    return value
+  end
+end
+
+function M.location_at(parsed_document, row)
+  local location
   document.walk(parsed_document, function(region)
     local metadata = region.metadata or {}
     if region.start_row <= row and row < region.end_row and metadata.path then
-      path = metadata.path
+      location = {
+        path = metadata.path,
+        line = positive_integer(metadata.target_line)
+          or positive_integer(metadata.first_line)
+          or positive_integer(metadata.line_number),
+        column = positive_integer(metadata.target_column),
+      }
     end
   end)
-  return path
+  return location
+end
+
+function M.path_at(parsed_document, row)
+  local location = M.location_at(parsed_document, row)
+  return location and location.path or nil
+end
+
+local function is_absolute(path)
+  return starts_with(path, "/")
+    or path:match("^%a:[/\\]") ~= nil
+    or starts_with(path, "\\\\")
+end
+
+local function existing_path(path)
+  return vim.fn.filereadable(path) == 1 or vim.fn.isdirectory(path) == 1
+end
+
+local function repository_root(path)
+  local marker = vim.fs.find(".git", {
+    path = path,
+    upward = true,
+    limit = 1,
+  })[1]
+  return marker and vim.fs.dirname(marker) or nil
+end
+
+local function resolve_path(path, parsed_document, cwd)
+  local candidates = {}
+  local seen = {}
+
+  local function add(candidate)
+    if not candidate or candidate == "" then
+      return
+    end
+
+    candidate = vim.fs.normalize(candidate)
+    if not seen[candidate] then
+      seen[candidate] = true
+      candidates[#candidates + 1] = candidate
+    end
+  end
+
+  if is_absolute(path) then
+    add(path)
+  else
+    local metadata = parsed_document.metadata or {}
+    local workspace_root = metadata.workspace_root
+    if type(workspace_root) == "string" and is_absolute(workspace_root) then
+      add(workspace_root .. "/" .. path)
+    end
+
+    local git_root = repository_root(cwd)
+    if git_root then
+      add(git_root .. "/" .. path)
+    end
+    add(cwd .. "/" .. path)
+  end
+
+  for _, candidate in ipairs(candidates) do
+    if existing_path(candidate) then
+      return candidate
+    end
+  end
+end
+
+local function move_to_location(winid, location)
+  if not location.line then
+    return
+  end
+
+  local bufnr = vim.api.nvim_win_get_buf(winid)
+  local line_count = vim.api.nvim_buf_line_count(bufnr)
+  local line = math.min(location.line, line_count)
+  local text = vim.api.nvim_buf_get_lines(bufnr, line - 1, line, false)[1] or ""
+  local column = math.min((location.column or 1) - 1, #text)
+  vim.api.nvim_win_set_cursor(winid, { line, column })
 end
 
 function M.open_file(bufnr, parsed_document)
   local winid = buffer_window(bufnr)
   local row = vim.api.nvim_win_get_cursor(winid)[1] - 1
-  local path = M.path_at(parsed_document, row)
-  if not path or path == "" then
+  local location = M.location_at(parsed_document, row)
+  if not location or not location.path or location.path == "" then
     return nil, "no recognized file at cursor", "no_file"
   end
 
-  local resolved = vim.fs.normalize(vim.fn.fnamemodify(path, ":p"))
-  if vim.fn.filereadable(resolved) ~= 1 and vim.fn.isdirectory(resolved) ~= 1 then
-    return nil, ("file does not exist: %s"):format(path), "not_found"
+  local cwd = vim.api.nvim_win_call(winid, function()
+    return vim.fn.getcwd()
+  end)
+  local resolved = resolve_path(location.path, parsed_document, cwd)
+  if not resolved then
+    return nil, ("file does not exist: %s"):format(location.path), "not_found"
   end
 
   vim.api.nvim_win_call(winid, function()
     vim.cmd("silent edit " .. vim.fn.fnameescape(resolved))
+    move_to_location(winid, location)
   end)
   return resolved
 end

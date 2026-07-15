@@ -66,7 +66,8 @@ Then run:
 
 After attaching, also verify `[a`, `]a`, `[d`, `]d`, `[r`, `]r`, `[f`, `]f`,
 `[e`, `]e`, `[h`, `]h`, counts such as `3]a`, jump-list return with `Ctrl-o`, and
-`gf` on both absolute and repository-relative paths.
+`gf` on absolute, repository-relative, and Cursor workspace-relative paths,
+including recognized line/column positioning.
 
 For contextual syntax checks, use the normal Neovim configuration or explicitly
 add the relevant parser and query directories to `runtimepath`.
@@ -152,6 +153,4 @@ file opening. Follow-up work should add:
 
 1. contextual `<CR>` behavior after folding exists, so opening a file and
    expanding a block are unambiguous;
-2. repository-root-aware resolution and optional line/column metadata for
-   relative file references;
-3. tests for mapping changes applied to buffers that are already attached.
+2. tests for mapping changes applied to buffers that are already attached.

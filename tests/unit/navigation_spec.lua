@@ -9,13 +9,23 @@ local parsed = document.new({
       kind = "action",
       start_row = 0,
       end_row = 1,
-      metadata = { diff_id = 1, path = "src/first.lua" },
+      metadata = {
+        diff_id = 1,
+        path = "src/first.lua",
+        target_line = 12,
+        target_column = 4,
+      },
     },
     {
       kind = "diff",
       start_row = 1,
       end_row = 2,
-      metadata = { diff_id = 1, line_type = "add", path = "src/first.lua" },
+      metadata = {
+        diff_id = 1,
+        line_type = "add",
+        line_number = 22,
+        path = "src/first.lua",
+      },
     },
     { kind = "action", start_row = 3, end_row = 4 },
     { kind = "response", start_row = 4, end_row = 5 },
@@ -109,5 +119,12 @@ return {
   h.test("navigation rejects unsupported kinds and invalid counts", function()
     h.falsy(pcall(navigation.targets, parsed, "prompt"))
     h.falsy(pcall(navigation.find_target, parsed, "action", 0, "next", 0, true))
+  end),
+
+  h.test("navigation returns optional file coordinates", function()
+    h.eq({ path = "src/first.lua", line = 12, column = 4 }, navigation.location_at(parsed, 0))
+    h.eq({ path = "src/first.lua", line = 22 }, navigation.location_at(parsed, 1))
+    h.eq("src/first.lua", navigation.path_at(parsed, 0))
+    h.eq(nil, navigation.location_at(parsed, 4))
   end),
 }

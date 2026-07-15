@@ -116,6 +116,7 @@ return {
 
     h.eq("cursor", parsed.source)
     h.eq("zellij_scrollback", parsed.transport)
+    h.eq("/srv/example-project", parsed.metadata.workspace_root)
     h.eq("header", header.metadata.metadata_type)
     h.eq("v2026.07.09-a3815c0", version.metadata.version)
     h.eq("command", prompt.kind)
@@ -143,6 +144,7 @@ return {
     h.eq("markdown", read.metadata.language)
     h.eq(680, read.metadata.first_line)
     h.eq(779, read.metadata.last_line)
+    h.eq(680, read.metadata.target_line)
     h.eq("search", search.metadata.action_type)
     h.eq("importProducts|UniversalXmlParser", search.metadata.query)
     h.eq(".../Services/ProductFeedParser.php", truncated.metadata.display_path)
@@ -153,6 +155,18 @@ return {
     h.eq("file_reference", reference.kind)
     h.eq("app/Console/Kernel.php", reference.metadata.path)
     h.eq(28, reference.metadata.first_line)
+    h.eq(28, reference.metadata.target_line)
+  end),
+
+  h.test("Cursor parser maps colon line and column references", function()
+    local parsed = adapter.parse({ "src/example.lua:42:7", "https://example.test:42:7" }, {})
+    local reference = region_at(parsed, 0)
+
+    h.eq("file_reference", reference.kind)
+    h.eq("src/example.lua", reference.metadata.path)
+    h.eq(42, reference.metadata.target_line)
+    h.eq(7, reference.metadata.target_column)
+    h.eq("unknown", region_at(parsed, 1).kind)
   end),
 
   h.test("Cursor parser normalizes edit previews and collapsed rows", function()

@@ -9,7 +9,7 @@ session:
 - todo progress and completion rows;
 - `Edited` previews with context, added, deleted, blank, and truncated rows;
 - shell commands, collapsed output, ordinary output, and a failed command;
-- standalone file references with line ranges.
+- standalone file references with line ranges and a workspace-root footer.
 
 Hostnames, repository names, paths, prompts, source code, and deployment output
 were replaced before committing the fixture. As the CLI does not preserve an

@@ -161,7 +161,10 @@ Mappings are installed only when the same key is not already mapped locally in
 the attached buffer, and detach removes only mappings installed by agentlog.
 Set `mappings.enabled = false` to disable all defaults, or replace any individual
 mapping in `setup()`. `gf` falls back to Neovim's native behavior when the cursor
-is not on a file recognized by the active adapter.
+is not on a file recognized by the active adapter. Relative references are
+resolved against the session workspace root when available, then the current Git
+root and working directory. Recognized line and column coordinates position the
+cursor after opening the file.
 
 For Codex `Edited`, `Added`, and `Deleted` blocks, Claude `Update` blocks, and
 Cursor `Edited` previews, agentlog separates display prefixes and diff markers
