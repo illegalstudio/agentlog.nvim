@@ -8,10 +8,11 @@ CONTENTS                                                     *agentlog-contents*
 3. Setup ....................................................... |agentlog-setup|
 4. Usage ....................................................... |agentlog-usage|
 5. Commands ................................................. |agentlog-commands|
-6. Rendering ............................................... |agentlog-rendering|
-7. Configuration ............................................. |agentlog-config|
-8. Lua API ....................................................... |agentlog-api|
-9. Current scope .............................................. |agentlog-scope|
+6. Navigation ............................................. |agentlog-navigation|
+7. Rendering ............................................... |agentlog-rendering|
+8. Configuration ............................................. |agentlog-config|
+9. Lua API ....................................................... |agentlog-api|
+10. Current scope ............................................. |agentlog-scope|
 
 ==============================================================================
 INTRODUCTION                                                    *agentlog-intro*
@@ -60,6 +61,17 @@ is present on 'runtimepath'.
         treesitter = true,
         max_region_lines = 500,
       },
+      navigation = {
+        wrap = true,
+      },
+      mappings = {
+        enabled = true,
+        next_action = "]a",
+        previous_action = "[a",
+        next_diff = "]d",
+        previous_diff = "[d",
+        open_file = "gf",
+      },
     })
 <
 Automatic attachment is disabled by default. When enabled, only `*.dump` files
@@ -104,7 +116,43 @@ COMMANDS                                                      *agentlog-commands
         Clear plugin decorations and restore the previous filetype. Buffer
         contents remain unchanged.
 
+                                                          *:AgentlogNext*
+:AgentlogNext {kind}
+        Jump to the next region of {kind}. Supported kinds are `action` and
+        `diff`. A command count is accepted; for example:
+>
+            :3AgentlogNext action
+<
+                                                      *:AgentlogPrevious*
+:AgentlogPrevious {kind}
+        Jump to the previous region of {kind}. Supported kinds and command
+        counts match |:AgentlogNext|.
+
 Use |:checkhealth| agentlog to inspect the Neovim and Tree-sitter runtime.
+
+==============================================================================
+NAVIGATION                                                *agentlog-navigation*
+
+Navigation mappings are normal-mode, buffer-local, and installed on attach:
+
+    ]a      Next action.
+    [a      Previous action.
+    ]d      Next changed diff block.
+    [d      Previous changed diff block.
+    gf      Open the recognized file under the cursor.
+
+Counts are supported, such as `3]a`. Navigation wraps at the first and last
+target by default. Jumps enter the window jump list, so normal jump-list
+commands can return to the previous location.
+
+All rows belonging to one structured diff are one navigation target. Source
+previews containing only context, such as a Claude `Read`, are not considered
+changed diffs. `gf` uses the exact path stored by the adapter. When no adapter
+path is present at the cursor, Neovim's native |gf| behavior is used.
+
+Existing buffer-local mappings take precedence. Detach removes only mappings
+installed by agentlog. Disable or customize the defaults through
+|agentlog-mappings|.
 
 ==============================================================================
 RENDERING                                                    *agentlog-rendering*
@@ -218,6 +266,26 @@ CONFIGURATION                                                  *agentlog-config*
         Positive integer, default 500. Skip advanced parsing for larger diff
         regions while keeping structural highlighting active.
 
+                                                *agentlog-navigation-wrap*
+`navigation.wrap` ~
+        Boolean, default true. Continue navigation from the opposite end when
+        no later or earlier target exists.
+
+                                                    *agentlog-mappings*
+`mappings.enabled` ~
+        Boolean, default true. Install agentlog's normal-mode buffer-local
+        mappings on attach.
+
+`mappings.next_action`, `mappings.previous_action` ~
+        Strings, defaults `]a` and `[a`. Navigate between action regions.
+
+`mappings.next_diff`, `mappings.previous_diff` ~
+        Strings, defaults `]d` and `[d`. Navigate between changed diff blocks.
+
+`mappings.open_file` ~
+        String, default `gf`. Open the recognized file at the cursor. Use an
+        empty string to disable any individual mapping.
+
 ==============================================================================
 LUA API                                                            *agentlog-api*
 
@@ -233,11 +301,16 @@ The command behavior is also available through Lua:
     agentlog.detach(bufnr)
     agentlog.is_attached(bufnr)
     agentlog.get_document(bufnr)
+    agentlog.goto_next("action", bufnr, count)
+    agentlog.goto_previous("diff", bufnr, count)
+    agentlog.open_file(bufnr)
 <
 `bufnr` may be 0 or omitted where applicable to target the current buffer.
 Without `source`, attach detects the best matching enabled adapter. Explicit
 selection remains available for ambiguous or truncated input. `get_document()`
 returns the structured region document generated by the active adapter.
+Navigation functions return the zero-based destination row, or nil plus a
+message when no destination exists. `open_file()` returns the resolved path.
 
 ==============================================================================
 CURRENT SCOPE                                                    *agentlog-scope*
@@ -247,9 +320,10 @@ Zellij scrollback workflow. Recognition is deliberately conservative:
 ambiguous text stays neutral instead of receiving a potentially incorrect
 semantic type.
 
-Navigation mappings, folding, copy commands, focus modes, and additional agent
-adapters are not yet implemented. Configuration fields reserved for those
-features should not be considered active until their corresponding behavior
-is documented here.
+Navigation currently covers actions, changed diff blocks, and recognized files.
+Response/error navigation, folding, copy commands, focus modes, and additional
+agent adapters are not yet implemented. Configuration fields reserved for those
+features should not be considered active until their corresponding behavior is
+documented here.
 
 vim:tw=78:ts=8:noet:ft=help:norl:

@@ -33,6 +33,22 @@ function M.get_document(bufnr)
   return attach.get_document(bufnr)
 end
 
+function M.navigation_kinds()
+  return attach.navigation_kinds()
+end
+
+function M.goto_next(kind, bufnr, count)
+  return attach.navigate(bufnr, kind, "next", count)
+end
+
+function M.goto_previous(kind, bufnr, count)
+  return attach.navigate(bufnr, kind, "previous", count)
+end
+
+function M.open_file(bufnr)
+  return attach.open_file(bufnr)
+end
+
 function M._bootstrap()
   if bootstrapped then
     return

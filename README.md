@@ -83,6 +83,8 @@ The initial commands are:
 - `:AgentlogAttach` - parse and render the current buffer;
 - `:AgentlogRefresh` - rebuild the document and its decorations;
 - `:AgentlogDetach` - remove decorations and restore the previous filetype;
+- `:AgentlogNext {action|diff}` - jump to the next semantic region;
+- `:AgentlogPrevious {action|diff}` - jump to the previous semantic region;
 - `:checkhealth agentlog` - inspect the local runtime.
 
 Automatic attachment is off by default:
@@ -99,12 +101,44 @@ require("agentlog").setup({
     treesitter = true,
     max_region_lines = 500,
   },
+  navigation = {
+    wrap = true,
+  },
+  mappings = {
+    enabled = true,
+    next_action = "]a",
+    previous_action = "[a",
+    next_diff = "]d",
+    previous_diff = "[d",
+    open_file = "gf",
+  },
 })
 ```
 
 When enabled, automatic attachment considers only `*.dump` files with a strong
 Codex or Claude signature and enough independent evidence. Set
 `vim.b.agentlog_disable = true` before `BufReadPost` to opt a buffer out.
+
+## Navigation
+
+Attached buffers receive these buffer-local normal-mode mappings by default:
+
+| Mapping | Action |
+| --- | --- |
+| `]a` / `[a` | Next/previous agent action |
+| `]d` / `[d` | Next/previous changed diff block |
+| `gf` | Open the recognized file under the cursor |
+
+Counts are supported, so `3]a` jumps forward three actions. Navigation wraps at
+the buffer boundaries by default and records jumps so regular jump-list motions
+can return to the previous location. A diff containing several rendered rows is
+one destination; read-only source previews are not treated as changes.
+
+Mappings are installed only when the same key is not already mapped locally in
+the attached buffer, and detach removes only mappings installed by agentlog.
+Set `mappings.enabled = false` to disable all defaults, or replace any individual
+mapping in `setup()`. `gf` falls back to Neovim's native behavior when the cursor
+is not on a file recognized by the active adapter.
 
 For Codex `Edited`, `Added`, and `Deleted` blocks and Claude `Update` blocks,
 agentlog separates line numbers and diff markers from the source, infers the
@@ -135,8 +169,8 @@ fixture notes under [`tests/fixtures/`](tests/fixtures/).
 ## Status
 
 The immediate next milestone is to expand the anonymized Codex and Claude fixture
-corpus, then add navigation, folding, copying, and coverage for additional output
-variants.
+corpus, extend navigation to responses and errors, then add folding, copying, and
+coverage for additional output variants.
 
 ## License
 

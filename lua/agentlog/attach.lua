@@ -1,6 +1,7 @@
 local adapters = require("agentlog.adapters")
 local config = require("agentlog.config")
 local detect = require("agentlog.detect")
+local navigation = require("agentlog.navigation")
 local render = require("agentlog.render")
 
 local M = {}
@@ -29,6 +30,115 @@ end
 
 local function has_evidence(detection, name)
   return detection.evidence and vim.tbl_contains(detection.evidence, name)
+end
+
+local function notify(message, level)
+  vim.notify(("agentlog.nvim: %s"):format(message), level)
+end
+
+local function buffer_mapping(bufnr, lhs)
+  for _, mapping in ipairs(vim.api.nvim_buf_get_keymap(bufnr, "n")) do
+    if mapping.lhs == lhs then
+      return mapping
+    end
+  end
+end
+
+local function run_navigation_mapping(bufnr, kind, direction)
+  local ok, target, message = pcall(M.navigate, bufnr, kind, direction, vim.v.count1)
+  if not ok then
+    notify(target, vim.log.levels.ERROR)
+  elseif target == nil then
+    notify(message, vim.log.levels.INFO)
+  end
+end
+
+local function run_open_file_mapping(bufnr)
+  local ok, path, message, reason = pcall(M.open_file, bufnr)
+  if not ok then
+    notify(path, vim.log.levels.ERROR)
+  elseif path then
+    return
+  elseif reason == "no_file" then
+    local native_ok, native_error = pcall(vim.cmd, "normal! gf")
+    if not native_ok then
+      notify(native_error, vim.log.levels.ERROR)
+    end
+  else
+    notify(message, vim.log.levels.WARN)
+  end
+end
+
+local mapping_specs = {
+  {
+    option = "next_action",
+    description = "agentlog.nvim: next action",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "action", "next")
+    end,
+  },
+  {
+    option = "previous_action",
+    description = "agentlog.nvim: previous action",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "action", "previous")
+    end,
+  },
+  {
+    option = "next_diff",
+    description = "agentlog.nvim: next diff",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "diff", "next")
+    end,
+  },
+  {
+    option = "previous_diff",
+    description = "agentlog.nvim: previous diff",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "diff", "previous")
+    end,
+  },
+  {
+    option = "open_file",
+    description = "agentlog.nvim: open recognized file",
+    callback = run_open_file_mapping,
+  },
+}
+
+local function install_mappings(bufnr, state)
+  local mappings = config.get().mappings or {}
+  state.mappings = {}
+
+  if mappings.enabled == false then
+    return
+  end
+
+  for _, specification in ipairs(mapping_specs) do
+    local lhs = mappings[specification.option]
+    if type(lhs) == "string" and lhs ~= "" and not buffer_mapping(bufnr, lhs) then
+      vim.keymap.set("n", lhs, function()
+        specification.callback(bufnr)
+      end, {
+        buffer = bufnr,
+        desc = specification.description,
+        silent = true,
+      })
+      state.mappings[#state.mappings + 1] = {
+        lhs = lhs,
+        description = specification.description,
+      }
+    end
+  end
+end
+
+local function clear_mappings(bufnr, state)
+  for _, installed in ipairs(state.mappings or {}) do
+    local current = buffer_mapping(bufnr, installed.lhs)
+    if current and current.desc == installed.description then
+      pcall(vim.keymap.del, "n", installed.lhs, { buffer = bufnr })
+    end
+  end
+  state.mappings = {}
 end
 
 local function parse(bufnr, source, transport)
@@ -85,6 +195,7 @@ function M.attach(bufnr, options)
   vim.b[bufnr].agentlog_attached = true
   vim.b[bufnr].agentlog_source = source
   render.render(bufnr, parsed_document)
+  install_mappings(bufnr, states[bufnr])
 
   return parsed_document
 end
@@ -114,6 +225,7 @@ function M.detach(bufnr)
 
   if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_is_loaded(bufnr) then
     render.clear(bufnr)
+    clear_mappings(bufnr, state)
     vim.b[bufnr].agentlog_attached = nil
     vim.b[bufnr].agentlog_source = nil
 
@@ -134,6 +246,42 @@ end
 function M.get_document(bufnr)
   local state = states[resolve_buffer(bufnr)]
   return state and state.document or nil
+end
+
+function M.navigation_kinds()
+  return navigation.kinds()
+end
+
+function M.navigate(bufnr, kind, direction, count)
+  bufnr = resolve_buffer(bufnr)
+  assert_buffer(bufnr)
+
+  local state = states[bufnr]
+  if not state then
+    error("buffer is not attached")
+  end
+
+  local navigation_config = config.get().navigation or {}
+  return navigation.goto_region(
+    bufnr,
+    state.document,
+    kind,
+    direction,
+    count,
+    navigation_config.wrap ~= false
+  )
+end
+
+function M.open_file(bufnr)
+  bufnr = resolve_buffer(bufnr)
+  assert_buffer(bufnr)
+
+  local state = states[bufnr]
+  if not state then
+    error("buffer is not attached")
+  end
+
+  return navigation.open_file(bufnr, state.document)
 end
 
 function M.configure_auto_attach()

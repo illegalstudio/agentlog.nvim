@@ -9,15 +9,26 @@ return {
     h.eq(0.75, config.get().min_confidence)
     h.truthy(config.get().adapters.claude.enabled)
     h.truthy(config.get().adapters.codex.enabled)
+    h.truthy(config.get().navigation.wrap)
+    h.eq("]a", config.get().mappings.next_action)
+    h.eq("[a", config.get().mappings.previous_action)
+    h.eq("]d", config.get().mappings.next_diff)
+    h.eq("[d", config.get().mappings.previous_diff)
+    h.eq("gf", config.get().mappings.open_file)
   end),
 
   h.test("configuration deep-merges user options", function()
     config.setup({
       min_confidence = 0.9,
+      navigation = { wrap = false },
+      mappings = { next_action = "]A" },
       render = { virtual_text = false },
     })
 
     h.eq(0.9, config.get().min_confidence)
+    h.falsy(config.get().navigation.wrap)
+    h.eq("]A", config.get().mappings.next_action)
+    h.eq("[a", config.get().mappings.previous_action)
     h.falsy(config.get().render.virtual_text)
     h.truthy(config.get().render.diff_background)
 

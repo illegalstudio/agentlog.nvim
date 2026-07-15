@@ -3,11 +3,21 @@ local agentlog = require("agentlog")
 local render = require("agentlog.render")
 local syntax = require("agentlog.syntax")
 
+local function buffer_mapping(bufnr, lhs)
+  for _, mapping in ipairs(vim.api.nvim_buf_get_keymap(bufnr, "n")) do
+    if mapping.lhs == lhs then
+      return mapping
+    end
+  end
+end
+
 return {
   h.test("plugin commands load without setup", function()
     h.eq(2, vim.fn.exists(":AgentlogAttach"))
     h.eq(2, vim.fn.exists(":AgentlogRefresh"))
     h.eq(2, vim.fn.exists(":AgentlogDetach"))
+    h.eq(2, vim.fn.exists(":AgentlogNext"))
+    h.eq(2, vim.fn.exists(":AgentlogPrevious"))
   end),
 
   h.test("attach, refresh, and detach preserve buffer text", function()
@@ -31,6 +41,8 @@ return {
     h.eq("codex", parsed.source)
     h.truthy(agentlog.is_attached(bufnr))
     h.eq("agentlog", vim.api.nvim_get_option_value("filetype", { buf = bufnr }))
+    h.eq("agentlog.nvim: next action", buffer_mapping(bufnr, "]a").desc)
+    h.eq("agentlog.nvim: open recognized file", buffer_mapping(bufnr, "gf").desc)
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
     h.falsy(vim.api.nvim_get_option_value("modified", { buf = bufnr }))
     h.truthy(#first_marks > 0)
@@ -44,8 +56,77 @@ return {
     h.falsy(agentlog.is_attached(bufnr))
     h.eq("text", vim.api.nvim_get_option_value("filetype", { buf = bufnr }))
     h.eq(0, #vim.api.nvim_buf_get_extmarks(bufnr, render.namespace(), 0, -1, {}))
+    h.eq(nil, buffer_mapping(bufnr, "]a"))
+    h.eq(nil, buffer_mapping(bufnr, "gf"))
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
 
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end),
+
+  h.test("navigation mappings support counts, wrapping, commands, and file opening", function()
+    local first_path = vim.fn.tempname() .. ".lua"
+    h.eq(0, vim.fn.writefile({ "return 1" }, first_path))
+
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      ("• Edited %s (+1 -0)"):format(first_path),
+      "     1 +return 1",
+      "",
+      "• Explored",
+      "  └ Search answer in example.lua",
+      "",
+      "• Added README.md (+1 -0)",
+      "     1 +return 2",
+    })
+    vim.api.nvim_set_current_buf(bufnr)
+    agentlog.attach(bufnr)
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+
+    vim.cmd("AgentlogNext action")
+    h.eq(4, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal 2]a")
+    h.eq(1, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal [d")
+    h.eq(7, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal ]d")
+    h.eq(1, vim.api.nvim_win_get_cursor(0)[1])
+
+    vim.cmd("normal gf")
+    local opened_buffer = vim.api.nvim_get_current_buf()
+    h.eq(vim.uv.fs_realpath(first_path), vim.uv.fs_realpath(vim.api.nvim_buf_get_name(0)))
+
+    vim.api.nvim_set_current_buf(bufnr)
+    vim.api.nvim_buf_delete(opened_buffer, { force = true })
+
+    vim.api.nvim_win_set_cursor(0, { 7, 0 })
+    vim.cmd("normal gf")
+    opened_buffer = vim.api.nvim_get_current_buf()
+    h.eq(
+      vim.uv.fs_realpath("README.md"),
+      vim.uv.fs_realpath(vim.api.nvim_buf_get_name(opened_buffer))
+    )
+
+    vim.api.nvim_set_current_buf(bufnr)
+    vim.api.nvim_buf_delete(opened_buffer, { force = true })
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+    vim.fn.delete(first_path)
+  end),
+
+  h.test("attachment preserves pre-existing buffer-local mappings", function()
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "• Ran pwd", "  └ /tmp" })
+    vim.keymap.set("n", "]a", "<Nop>", {
+      buffer = bufnr,
+      desc = "existing buffer mapping",
+    })
+
+    agentlog.attach(bufnr)
+    h.eq("existing buffer mapping", buffer_mapping(bufnr, "]a").desc)
+    agentlog.detach(bufnr)
+    h.eq("existing buffer mapping", buffer_mapping(bufnr, "]a").desc)
+
+    vim.keymap.del("n", "]a", { buffer = bufnr })
     vim.api.nvim_buf_delete(bufnr, { force = true })
   end),
 

@@ -28,7 +28,10 @@ Tests currently cover:
 - layered diff extmarks;
 - contextual Tree-sitter captures;
 - structural fallback when syntax highlighting is disabled;
-- positive, negative, and per-buffer opt-out behavior for automatic attachment.
+- positive, negative, and per-buffer opt-out behavior for automatic attachment;
+- semantic action/diff target grouping, counts, direction, and wrap behavior;
+- navigation commands and buffer-local mapping lifecycle;
+- structured `gf` file opening and preservation of existing local mappings.
 
 Generate help tags as a documentation check:
 
@@ -56,8 +59,14 @@ Then run:
 :AgentlogAttach
 :AgentlogRefresh
 :AgentlogDetach
+:AgentlogNext action
+:AgentlogPrevious diff
 :checkhealth agentlog
 ```
+
+After attaching, also verify `[a`, `]a`, `[d`, `]d`, counts such as `3]a`,
+jump-list return with `Ctrl-o`, and `gf` on both absolute and repository-relative
+paths.
 
 For contextual syntax checks, use the normal Neovim configuration or explicitly
 add the relevant parser and query directories to `runtimepath`.
@@ -130,6 +139,21 @@ they affect both audiences.
 
 1. Grow the anonymized Codex and Claude fixture corpus.
 2. Cover more compact diff and truncated-scrollback variants.
-3. Add navigation between actions, diffs, responses, and errors.
+3. Complete the navigation follow-ups below.
 4. Add folding and copy commands without mutating buffer text.
 5. Enable automatic attachment only after broader negative detection coverage.
+
+## Navigation follow-ups
+
+The first navigation slice intentionally covers actions, changed diff blocks,
+and structured file opening. Follow-up work should add:
+
+1. response/turn targets with configurable `[r` and `]r` mappings;
+2. combined error/warning targets with configurable `[e` and `]e` mappings;
+3. dedicated file-reference traversal with `[f` and `]f`;
+4. contextual `<CR>` behavior after folding exists, so opening a file and
+   expanding a block are unambiguous;
+5. optional hunk-level navigation distinct from file-level diff navigation;
+6. repository-root-aware resolution and optional line/column metadata for
+   relative file references;
+7. tests for mapping changes applied to buffers that are already attached.

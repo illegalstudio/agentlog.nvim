@@ -23,8 +23,16 @@ M.defaults = {
     treesitter = true,
     max_region_lines = 500,
   },
+  navigation = {
+    wrap = true,
+  },
   mappings = {
     enabled = true,
+    next_action = "]a",
+    previous_action = "[a",
+    next_diff = "]d",
+    previous_diff = "[d",
+    open_file = "gf",
   },
 }
 

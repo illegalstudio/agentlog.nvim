@@ -24,7 +24,8 @@ Agent adapter
 Structured region document
     ├── Semantic renderer
     ├── Diff renderer
-    └── Contextual syntax renderer
+    ├── Contextual syntax renderer
+    └── Semantic navigator
 ```
 
 Manual attachment scores enabled adapters and selects the best source carrying an
@@ -41,6 +42,7 @@ Automatic attachment additionally requires the configured confidence threshold.
 | `lua/agentlog/attach.lua` | Per-buffer lifecycle and state. |
 | `lua/agentlog/detect.lua` | Adapter scoring and buffer sampling. |
 | `lua/agentlog/document.lua` | Region validation, normalization, and traversal. |
+| `lua/agentlog/navigation.lua` | Semantic targets, cursor jumps, and file opening. |
 | `lua/agentlog/adapters/` | Agent-specific detection and parsing. |
 | `lua/agentlog/render.lua` | Extmarks for semantic regions and diff layers. |
 | `lua/agentlog/highlight.lua` | Semantic groups and colorscheme integration. |
@@ -83,8 +85,29 @@ Attaching an already attached buffer performs a refresh. Refresh reparses first,
 clears the plugin namespace, and renders a new document, which keeps the operation
 idempotent. Detach clears decorations and restores the previous filetype.
 
-State is discarded on `BufUnload` and `BufWipeout`. The plugin never executes
-commands found in scrollback and never writes to referenced files.
+State is discarded on `BufUnload` and `BufWipeout`. Buffer-local navigation
+mappings are installed after the `agentlog` filetype is set, so an existing
+buffer-local mapping takes precedence. Detach removes only mappings that still
+carry agentlog's own description. The plugin never executes commands found in
+scrollback and never writes to referenced files.
+
+## Navigation
+
+`navigation.lua` derives destinations from the same parsed region document used
+by the renderers. Action navigation targets every `action` region. Diff
+navigation groups regions by `diff_id`, chooses the first row of the group, and
+requires either a diff header/hunk or at least one added/deleted row. Consecutive
+changed rows without a `diff_id` form a fallback target for truncated scrollback.
+Context-only previews are intentionally excluded.
+
+The target search is independent of cursor movement and supports direction,
+counts, and optional wrapping. The final move uses a normal line jump inside the
+buffer's window so Neovim records it in the jump list.
+
+File opening uses only `metadata.path` from a region containing the cursor. The
+path is normalized relative to Neovim's current working directory and must exist
+before `:edit` is called with an escaped filename. When no structured path is
+available, the `gf` mapping delegates to Neovim's native command.
 
 ## Codex adapter
 
