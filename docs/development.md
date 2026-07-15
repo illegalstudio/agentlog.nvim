@@ -67,7 +67,8 @@ Then run:
 After attaching, also verify `[a`, `]a`, `[d`, `]d`, `[r`, `]r`, `[f`, `]f`,
 `[e`, `]e`, `[h`, `]h`, counts such as `3]a`, jump-list return with `Ctrl-o`, and
 `gf` on absolute, repository-relative, and Cursor workspace-relative paths,
-including recognized line/column positioning.
+including recognized line/column positioning. Also test Cursor basename-only
+references with one project match and with multiple ambiguous matches.
 
 For contextual syntax checks, use the normal Neovim configuration or explicitly
 add the relevant parser and query directories to `runtimepath`.

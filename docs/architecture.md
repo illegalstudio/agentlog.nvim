@@ -128,6 +128,13 @@ After opening, `target_line`/`target_column`, `first_line`, or a compact preview
 `line_number` position the cursor when present. When no structured path is
 available, the `gf` mapping delegates to Neovim's native command.
 
+If direct resolution fails for a Cursor reference containing only a basename,
+file opening searches recursively under the Cursor workspace root, falling back
+to the current Git root or working directory. The search stops after two matches:
+one match is opened, while multiple matches return an ambiguity error without
+choosing a file. Other adapters and references containing path separators do not
+use this fallback.
+
 ## Codex adapter
 
 The Codex adapter currently recognizes:
@@ -194,6 +201,8 @@ tries to open a path Cursor has abbreviated with an ellipsis.
 The workspace-and-branch footer supplies `document.metadata.workspace_root`.
 Cursor `lines N-M` references store the first line as `target_line`; references
 formatted as `path:line:column` also store `target_column`.
+An `Edited` action that exposes only a filename can therefore still navigate to
+a uniquely named file elsewhere under that workspace.
 
 Cursor's plain scrollback does not preserve a textual prompt/response marker on
 every turn. The first prompt after the banner and the first top-level prose after

@@ -165,6 +165,81 @@ return {
     h.eq(0, vim.fn.delete(root, "rf"))
   end),
 
+  h.test("Cursor basename file opening requires one project match", function()
+    local root = vim.fn.tempname()
+    local unique_path = root .. "/tests/Feature/PublicMcpPagesTest.php"
+    h.eq(1, vim.fn.mkdir(root .. "/tests/Feature", "p"))
+    h.eq(1, vim.fn.mkdir(root .. "/app/First", "p"))
+    h.eq(1, vim.fn.mkdir(root .. "/app/Second", "p"))
+    h.eq(0, vim.fn.writefile({ "<?php" }, unique_path))
+    h.eq(0, vim.fn.writefile({ "first" }, root .. "/app/First/Duplicate.php"))
+    h.eq(0, vim.fn.writefile({ "second" }, root .. "/app/Second/Duplicate.php"))
+
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "Cursor Agent",
+      "v2026.07.09-a3815c0",
+      "",
+      "    Edited PublicMcpPagesTest.php +3 -3",
+      "",
+      "    Edited Duplicate.php +1 -1",
+      "",
+      root .. " · main",
+    })
+    vim.api.nvim_set_current_buf(bufnr)
+    local parsed = agentlog.attach(bufnr)
+    h.eq("cursor", parsed.source)
+
+    vim.api.nvim_win_set_cursor(0, { 4, 0 })
+    vim.cmd("normal gf")
+    local opened_buffer = vim.api.nvim_get_current_buf()
+    h.eq(
+      vim.uv.fs_realpath(unique_path),
+      vim.uv.fs_realpath(vim.api.nvim_buf_get_name(opened_buffer))
+    )
+
+    vim.api.nvim_set_current_buf(bufnr)
+    vim.api.nvim_buf_delete(opened_buffer, { force = true })
+    vim.api.nvim_win_set_cursor(0, { 6, 0 })
+    local resolved, message, reason = agentlog.open_file(bufnr)
+    h.eq(nil, resolved)
+    h.eq("ambiguous", reason)
+    h.truthy(message:find("multiple files named Duplicate.php", 1, true))
+    h.eq(bufnr, vim.api.nvim_get_current_buf())
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+    h.eq(0, vim.fn.delete(root, "rf"))
+  end),
+
+  h.test("recursive basename search remains Cursor-specific", function()
+    local root = vim.fn.tempname()
+    local path = root .. "/nested/PublicMcpPagesTest.php"
+    h.eq(1, vim.fn.mkdir(root .. "/nested", "p"))
+    h.eq(0, vim.fn.writefile({ "<?php" }, path))
+
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "• Edited PublicMcpPagesTest.php (+1 -0)",
+      "     1 +<?php",
+    })
+    vim.api.nvim_set_current_buf(bufnr)
+    local parsed = agentlog.attach(bufnr)
+    h.eq("codex", parsed.source)
+
+    local original_cwd = vim.fn.getcwd()
+    vim.cmd("lcd " .. vim.fn.fnameescape(root))
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+    local resolved, _, reason = agentlog.open_file(bufnr)
+    h.eq(nil, resolved)
+    h.eq("not_found", reason)
+    vim.cmd("lcd " .. vim.fn.fnameescape(original_cwd))
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+    h.eq(0, vim.fn.delete(root, "rf"))
+  end),
+
   h.test("response mappings and commands navigate Codex prose", function()
     local bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {

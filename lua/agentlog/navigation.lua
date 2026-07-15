@@ -323,6 +323,39 @@ local function repository_root(path)
   return marker and vim.fs.dirname(marker) or nil
 end
 
+local function cursor_search_root(parsed_document, cwd)
+  local metadata = parsed_document.metadata or {}
+  local workspace_root = metadata.workspace_root
+  if type(workspace_root) == "string"
+    and is_absolute(workspace_root)
+    and vim.fn.isdirectory(workspace_root) == 1
+  then
+    return vim.fs.normalize(workspace_root)
+  end
+
+  return repository_root(cwd) or vim.fs.normalize(cwd)
+end
+
+local function resolve_cursor_basename(path, parsed_document, cwd)
+  if parsed_document.source ~= "cursor" or path:find("[/\\]") then
+    return nil
+  end
+
+  local root = cursor_search_root(parsed_document, cwd)
+  local matches = vim.fs.find(path, {
+    path = root,
+    type = "file",
+    limit = 2,
+  })
+
+  if #matches == 1 then
+    return vim.fs.normalize(matches[1])
+  end
+  if #matches > 1 then
+    return nil, "ambiguous", root
+  end
+end
+
 local function resolve_path(path, parsed_document, cwd)
   local candidates = {}
   local seen = {}
@@ -360,6 +393,8 @@ local function resolve_path(path, parsed_document, cwd)
       return candidate
     end
   end
+
+  return resolve_cursor_basename(path, parsed_document, cwd)
 end
 
 local function move_to_location(winid, location)
@@ -386,8 +421,19 @@ function M.open_file(bufnr, parsed_document)
   local cwd = vim.api.nvim_win_call(winid, function()
     return vim.fn.getcwd()
   end)
-  local resolved = resolve_path(location.path, parsed_document, cwd)
+  local resolved, resolution_error, search_root = resolve_path(
+    location.path,
+    parsed_document,
+    cwd
+  )
   if not resolved then
+    if resolution_error == "ambiguous" then
+      local message = ("multiple files named %s found under %s"):format(
+        location.path,
+        search_root
+      )
+      return nil, message, "ambiguous"
+    end
     return nil, ("file does not exist: %s"):format(location.path), "not_found"
   end
 

@@ -171,6 +171,9 @@ path is present at the cursor, Neovim's native |gf| behavior is used. Relative
 paths are resolved against a detected session workspace, then the Git root of
 the current working directory, then the working directory itself. Recognized
 line and column coordinates are 1-based and position the cursor after opening.
+For Cursor basename-only references that do not resolve directly, agentlog
+searches the project recursively and opens the file only when exactly one match
+exists. Multiple matches are left unopened.
 File navigation includes context-only previews and groups all regions sharing
 one structured file operation into a single target.
 Adjacent error and warning rows form one diagnostic target; separate diagnostic

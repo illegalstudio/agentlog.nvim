@@ -164,7 +164,9 @@ mapping in `setup()`. `gf` falls back to Neovim's native behavior when the curso
 is not on a file recognized by the active adapter. Relative references are
 resolved against the session workspace root when available, then the current Git
 root and working directory. Recognized line and column coordinates position the
-cursor after opening the file.
+cursor after opening the file. When Cursor reports only a filename and direct
+resolution fails, agentlog searches that filename recursively from the project
+root and opens it only when exactly one match exists.
 
 For Codex `Edited`, `Added`, and `Deleted` blocks, Claude `Update` blocks, and
 Cursor `Edited` previews, agentlog separates display prefixes and diff markers
