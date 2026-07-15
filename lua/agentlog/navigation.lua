@@ -7,6 +7,7 @@ local navigation_kinds = {
   diff = true,
   error = true,
   file = true,
+  hunk = true,
   response = true,
 }
 
@@ -159,7 +160,7 @@ local function diagnostic_targets(parsed_document)
 end
 
 function M.kinds()
-  return { "action", "diff", "error", "file", "response" }
+  return { "action", "diff", "error", "file", "hunk", "response" }
 end
 
 function M.targets(parsed_document, kind)
@@ -175,9 +176,10 @@ function M.targets(parsed_document, kind)
     return file_targets(parsed_document)
   end
 
+  local region_kind = kind == "hunk" and "diff_hunk" or kind
   local rows = {}
   document.walk(parsed_document, function(region)
-    if region.kind == kind then
+    if region.kind == region_kind then
       rows[#rows + 1] = region.start_row
     end
   end)

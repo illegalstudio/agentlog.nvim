@@ -76,6 +76,8 @@ is present on 'runtimepath'.
         previous_file = "[f",
         next_error = "]e",
         previous_error = "[e",
+        next_hunk = "]h",
+        previous_hunk = "[h",
         open_file = "gf",
       },
     })
@@ -125,7 +127,8 @@ COMMANDS                                                      *agentlog-commands
                                                           *:AgentlogNext*
 :AgentlogNext {kind}
         Jump to the next region of {kind}. Supported kinds are `action`, `diff`,
-        `error`, `file`, and `response`. A command count is accepted; for example:
+        `error`, `file`, `hunk`, and `response`. A command count is accepted; for
+        example:
 >
             :3AgentlogNext action
 <
@@ -151,6 +154,8 @@ Navigation mappings are normal-mode, buffer-local, and installed on attach:
     [f      Previous recognized file occurrence.
     ]e      Next error or warning.
     [e      Previous error or warning.
+    ]h      Next explicit unified-diff hunk.
+    [h      Previous explicit unified-diff hunk.
     gf      Open the recognized file under the cursor.
 
 Counts are supported, such as `3]a`. Navigation wraps at the first and last
@@ -165,6 +170,8 @@ File navigation includes context-only previews and groups all regions sharing
 one structured file operation into a single target.
 Adjacent error and warning rows form one diagnostic target; separate diagnostic
 blocks remain independently navigable.
+Hunk navigation targets each `@@ ... @@` header within a unified diff. Compact
+previews without explicit hunk headers do not produce synthetic targets.
 
 Existing buffer-local mappings take precedence. Detach removes only mappings
 installed by agentlog. Disable or customize the defaults through
@@ -308,6 +315,10 @@ CONFIGURATION                                                  *agentlog-config*
 `mappings.next_error`, `mappings.previous_error` ~
         Strings, defaults `]e` and `[e`. Navigate between errors and warnings.
 
+`mappings.next_hunk`, `mappings.previous_hunk` ~
+        Strings, defaults `]h` and `[h`. Navigate between explicit unified-diff
+        hunk headers.
+
 `mappings.open_file` ~
         String, default `gf`. Open the recognized file at the cursor. Use an
         empty string to disable any individual mapping.
@@ -346,10 +357,10 @@ Zellij scrollback workflow. Recognition is deliberately conservative:
 ambiguous text stays neutral instead of receiving a potentially incorrect
 semantic type.
 
-Navigation currently covers actions, changed diff blocks, assistant responses,
-recognized files, errors, and warnings. Folding, copy commands, focus modes, and
-additional agent adapters are not yet implemented. Configuration fields reserved
-for those features should not be considered active until their corresponding
-behavior is documented here.
+Navigation currently covers actions, changed diff blocks, explicit hunks,
+assistant responses, recognized files, errors, and warnings. Folding, copy
+commands, focus modes, and additional agent adapters are not yet implemented.
+Configuration fields reserved for those features should not be considered active
+until their corresponding behavior is documented here.
 
 vim:tw=78:ts=8:noet:ft=help:norl:

@@ -83,8 +83,8 @@ The initial commands are:
 - `:AgentlogAttach` - parse and render the current buffer;
 - `:AgentlogRefresh` - rebuild the document and its decorations;
 - `:AgentlogDetach` - remove decorations and restore the previous filetype;
-- `:AgentlogNext {action|diff|error|file|response}` - jump to the next region;
-- `:AgentlogPrevious {action|diff|error|file|response}` - jump to the previous region;
+- `:AgentlogNext {action|diff|error|file|hunk|response}` - jump to the next region;
+- `:AgentlogPrevious {action|diff|error|file|hunk|response}` - jump backward;
 - `:checkhealth agentlog` - inspect the local runtime.
 
 Automatic attachment is off by default:
@@ -116,6 +116,8 @@ require("agentlog").setup({
     previous_file = "[f",
     next_error = "]e",
     previous_error = "[e",
+    next_hunk = "]h",
+    previous_hunk = "[h",
     open_file = "gf",
   },
 })
@@ -136,6 +138,7 @@ Attached buffers receive these buffer-local normal-mode mappings by default:
 | `]r` / `[r` | Next/previous assistant response |
 | `]f` / `[f` | Next/previous recognized file occurrence |
 | `]e` / `[e` | Next/previous error or warning |
+| `]h` / `[h` | Next/previous explicit unified-diff hunk |
 | `gf` | Open the recognized file under the cursor |
 
 Counts are supported, so `3]a` jumps forward three actions. Navigation wraps at
@@ -144,6 +147,9 @@ can return to the previous location. A diff containing several rendered rows is
 one destination; read-only source previews are not treated as changes.
 File navigation still includes those read-only previews and groups all rows from
 one structured file operation into a single destination.
+Hunk navigation visits each `@@ … @@` section within a unified diff. Compact
+Codex and Claude previews do not expose hunk headers, so agentlog does not invent
+extra boundaries for them.
 
 Mappings are installed only when the same key is not already mapped locally in
 the attached buffer, and detach removes only mappings installed by agentlog.

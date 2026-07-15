@@ -141,6 +141,20 @@ local mapping_specs = {
     end,
   },
   {
+    option = "next_hunk",
+    description = "agentlog.nvim: next diff hunk",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "hunk", "next")
+    end,
+  },
+  {
+    option = "previous_hunk",
+    description = "agentlog.nvim: previous diff hunk",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "hunk", "previous")
+    end,
+  },
+  {
     option = "open_file",
     description = "agentlog.nvim: open recognized file",
     callback = run_open_file_mapping,

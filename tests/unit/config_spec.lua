@@ -20,6 +20,8 @@ return {
     h.eq("[f", config.get().mappings.previous_file)
     h.eq("]e", config.get().mappings.next_error)
     h.eq("[e", config.get().mappings.previous_error)
+    h.eq("]h", config.get().mappings.next_hunk)
+    h.eq("[h", config.get().mappings.previous_hunk)
     h.eq("gf", config.get().mappings.open_file)
   end),
 

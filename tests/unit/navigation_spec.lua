@@ -39,10 +39,10 @@ local parsed = document.new({
       metadata = { diff_id = 3, path = "src/second.lua" },
     },
     {
-      kind = "diff",
+      kind = "diff_hunk",
       start_row = 11,
       end_row = 12,
-      metadata = { diff_id = 3, line_type = "context", path = "src/second.lua" },
+      metadata = { diff_id = 3, path = "src/second.lua" },
     },
     { kind = "error", start_row = 12, end_row = 13 },
     { kind = "warning", start_row = 13, end_row = 14 },
@@ -66,15 +66,28 @@ local parsed = document.new({
       metadata = { line_type = "add", path = "src/loose.lua" },
     },
     { kind = "warning", start_row = 19, end_row = 20 },
+    {
+      kind = "diff_header",
+      start_row = 21,
+      end_row = 22,
+      metadata = { diff_id = 4, path = "src/third.lua" },
+    },
+    {
+      kind = "diff_hunk",
+      start_row = 22,
+      end_row = 23,
+      metadata = { diff_id = 4, path = "src/third.lua" },
+    },
   },
 })
 
 return {
   h.test("navigation collects semantic targets and changed diff groups", function()
     h.eq({ 0, 3, 6 }, navigation.targets(parsed, "action"))
-    h.eq({ 0, 10, 14, 17 }, navigation.targets(parsed, "diff"))
+    h.eq({ 0, 10, 14, 17, 21 }, navigation.targets(parsed, "diff"))
     h.eq({ 12, 19 }, navigation.targets(parsed, "error"))
-    h.eq({ 0, 6, 10, 14, 17 }, navigation.targets(parsed, "file"))
+    h.eq({ 0, 6, 10, 14, 17, 21 }, navigation.targets(parsed, "file"))
+    h.eq({ 11, 22 }, navigation.targets(parsed, "hunk"))
     h.eq({ 4, 9 }, navigation.targets(parsed, "response"))
   end),
 
@@ -82,9 +95,10 @@ return {
     h.eq(3, navigation.find_target(parsed, "action", 0, "next", 1, true))
     h.eq(0, navigation.find_target(parsed, "action", 3, "previous", 1, true))
     h.eq(0, navigation.find_target(parsed, "action", 3, "next", 2, true))
-    h.eq(17, navigation.find_target(parsed, "diff", 0, "previous", 1, true))
+    h.eq(21, navigation.find_target(parsed, "diff", 0, "previous", 1, true))
     h.eq(19, navigation.find_target(parsed, "error", 12, "next", 1, true))
     h.eq(6, navigation.find_target(parsed, "file", 0, "next", 1, true))
+    h.eq(22, navigation.find_target(parsed, "hunk", 11, "next", 1, true))
     h.eq(9, navigation.find_target(parsed, "response", 4, "next", 1, true))
 
     local target, message = navigation.find_target(parsed, "action", 6, "next", 1, false)

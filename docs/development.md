@@ -29,7 +29,7 @@ Tests currently cover:
 - contextual Tree-sitter captures;
 - structural fallback when syntax highlighting is disabled;
 - positive, negative, and per-buffer opt-out behavior for automatic attachment;
-- semantic action/diff/error/file/response targets, counts, direction, and wrap behavior;
+- semantic action/diff/error/file/hunk/response targets, counts, direction, and wrap behavior;
 - navigation commands and buffer-local mapping lifecycle;
 - structured `gf` file opening and preservation of existing local mappings.
 
@@ -65,8 +65,8 @@ Then run:
 ```
 
 After attaching, also verify `[a`, `]a`, `[d`, `]d`, `[r`, `]r`, `[f`, `]f`,
-`[e`, `]e`, counts such as `3]a`, jump-list return with `Ctrl-o`, and `gf` on
-both absolute and repository-relative paths.
+`[e`, `]e`, `[h`, `]h`, counts such as `3]a`, jump-list return with `Ctrl-o`, and
+`gf` on both absolute and repository-relative paths.
 
 For contextual syntax checks, use the normal Neovim configuration or explicitly
 add the relevant parser and query directories to `runtimepath`.
@@ -146,12 +146,11 @@ they affect both audiences.
 ## Navigation follow-ups
 
 Navigation currently covers actions, changed diff blocks, assistant responses,
-file occurrences, errors/warnings, and structured file opening. Follow-up work
-should add:
+file occurrences, explicit unified-diff hunks, errors/warnings, and structured
+file opening. Follow-up work should add:
 
 1. contextual `<CR>` behavior after folding exists, so opening a file and
    expanding a block are unambiguous;
-2. optional hunk-level navigation distinct from file-level diff navigation;
-3. repository-root-aware resolution and optional line/column metadata for
+2. repository-root-aware resolution and optional line/column metadata for
    relative file references;
-4. tests for mapping changes applied to buffers that are already attached.
+3. tests for mapping changes applied to buffers that are already attached.

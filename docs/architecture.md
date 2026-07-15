@@ -110,6 +110,11 @@ Diagnostic navigation combines `error` and `warning` regions. Adjacent diagnosti
 rows collapse into one target, preventing a compiler error followed by its build
 warning from requiring two jumps while preserving separate diagnostic blocks.
 
+Hunk navigation targets `diff_hunk` regions directly. These correspond to
+explicit `@@ ... @@` headers in unified diffs and remain distinct from the single
+file-level target produced by diff navigation. Compact previews do not synthesize
+hunk boundaries because the source format does not preserve them.
+
 The target search is independent of cursor movement and supports direction,
 counts, and optional wrapping. The final move uses a normal line jump inside the
 buffer's window so Neovim records it in the jump list.

@@ -38,6 +38,8 @@ M.defaults = {
     previous_file = "[f",
     next_error = "]e",
     previous_error = "[e",
+    next_hunk = "]h",
+    previous_hunk = "[h",
     open_file = "gf",
   },
 }

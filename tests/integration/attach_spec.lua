@@ -45,6 +45,7 @@ return {
     h.eq("agentlog.nvim: next response", buffer_mapping(bufnr, "]r").desc)
     h.eq("agentlog.nvim: next file", buffer_mapping(bufnr, "]f").desc)
     h.eq("agentlog.nvim: next error or warning", buffer_mapping(bufnr, "]e").desc)
+    h.eq("agentlog.nvim: next diff hunk", buffer_mapping(bufnr, "]h").desc)
     h.eq("agentlog.nvim: open recognized file", buffer_mapping(bufnr, "gf").desc)
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
     h.falsy(vim.api.nvim_get_option_value("modified", { buf = bufnr }))
@@ -63,6 +64,7 @@ return {
     h.eq(nil, buffer_mapping(bufnr, "]r"))
     h.eq(nil, buffer_mapping(bufnr, "]f"))
     h.eq(nil, buffer_mapping(bufnr, "]e"))
+    h.eq(nil, buffer_mapping(bufnr, "]h"))
     h.eq(nil, buffer_mapping(bufnr, "gf"))
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
 
@@ -179,6 +181,40 @@ return {
     h.eq(1, vim.api.nvim_win_get_cursor(0)[1])
     vim.cmd("normal [e")
     h.eq(11, vim.api.nvim_win_get_cursor(0)[1])
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end),
+
+  h.test("hunk mappings navigate within one unified file diff", function()
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "• Ran git diff",
+      "diff --git a/example.lua b/example.lua",
+      "index 1111111..2222222 100644",
+      "--- a/example.lua",
+      "+++ b/example.lua",
+      "@@ -1 +1 @@",
+      "-return false",
+      "+return true",
+      "@@ -10 +10 @@",
+      "-local answer = 41",
+      "+local answer = 42",
+    })
+    vim.api.nvim_set_current_buf(bufnr)
+    agentlog.attach(bufnr)
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+
+    vim.cmd("AgentlogNext diff")
+    h.eq(2, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("AgentlogNext hunk")
+    h.eq(6, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal ]h")
+    h.eq(9, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal ]h")
+    h.eq(6, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal [h")
+    h.eq(9, vim.api.nvim_win_get_cursor(0)[1])
 
     agentlog.detach(bufnr)
     vim.api.nvim_buf_delete(bufnr, { force = true })
