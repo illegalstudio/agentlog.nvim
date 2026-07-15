@@ -84,6 +84,31 @@ return {
     h.eq("cursor", result.source)
   end),
 
+  h.test("embedded Cursor fixture text does not override a Codex session", function()
+    local lines = {
+      "• Ran sed -n '1,80p' tests/fixtures/cursor/session.dump",
+      "  └ representative fixture output",
+    }
+    for index = 1, 60 do
+      lines[#lines + 1] = ("    ordinary output %d"):format(index)
+    end
+    vim.list_extend(lines, {
+      "    Cursor Agent",
+      "    v2026.07.09-a3815c0",
+      "    Edited example.lua +1 -1",
+      "• Edited lua/example.lua (+1 -1)",
+      "diff --git a/lua/example.lua b/lua/example.lua",
+    })
+
+    local context = { path = "/tmp/codex-with-cursor-fixture.dump" }
+    local cursor_result = adapter.detect(lines, context)
+    local result = detect.from_lines(lines, context)
+
+    h.falsy(vim.tbl_contains(cursor_result.evidence, "cursor_header"))
+    h.falsy(vim.tbl_contains(cursor_result.evidence, "agent_signature"))
+    h.eq("codex", result.source)
+  end),
+
   h.test("Cursor detector remains conservative for ordinary version logs", function()
     local result = adapter.detect({
       "Cursor Agent connected to the service",

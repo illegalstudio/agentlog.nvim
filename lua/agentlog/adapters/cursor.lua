@@ -24,11 +24,12 @@ local function leading_spaces(value)
 end
 
 local function is_header(line)
-  return trim(line) == "Cursor Agent"
+  return leading_spaces(line) <= 2 and trim(line) == "Cursor Agent"
 end
 
 local function is_version(line)
-  return trim(line):match("^v%d%d%d%d%.%d%d%.%d%d[%w%.%-]*$") ~= nil
+  return leading_spaces(line) <= 2
+    and trim(line):match("^v%d%d%d%d%.%d%d%.%d%d[%w%.%-]*$") ~= nil
 end
 
 local function is_tip(line)
@@ -292,15 +293,20 @@ function M.detect(lines, context)
     seen = {},
   }
 
-  local has_header = false
-  local has_version = false
+  local header_row
+  local version_row
   local has_tool_ui = false
   local has_preview = false
   local has_footer = false
 
-  for _, line in ipairs(lines) do
-    has_header = has_header or is_header(line)
-    has_version = has_version or is_version(line)
+  for index, line in ipairs(lines) do
+    if index <= 50 then
+      if not header_row and is_header(line) then
+        header_row = index
+      elseif header_row and index <= header_row + 3 and is_version(line) then
+        version_row = index
+      end
+    end
     has_tool_ui = has_tool_ui
       or action_metadata(line) ~= nil
       or is_todo(line)
@@ -308,6 +314,9 @@ function M.detect(lines, context)
     has_preview = has_preview or preview_line(line) ~= nil
     has_footer = has_footer or is_footer(line)
   end
+
+  local has_header = header_row ~= nil
+  local has_version = version_row ~= nil
 
   if has_header then
     result.specificity = has_version and 1 or 0.9
@@ -325,10 +334,7 @@ function M.detect(lines, context)
   if has_footer then
     add_evidence(result, "cursor_footer", 0.1)
   end
-  if has_header or (has_version and has_tool_ui) then
-    if not has_header then
-      result.specificity = 0.75
-    end
+  if has_header then
     add_evidence(result, "agent_signature", 0)
   end
 

@@ -245,6 +245,9 @@ confident attachment.
 When adapters have the same confidence, the detector prefers the candidate with
 the more specific agent signature. An explicit Cursor or Claude banner therefore
 wins over generic action patterns that another adapter can also recognize.
+Cursor banner evidence is accepted only in the scrollback preamble and at the
+interface indentation, preventing fixture text or command output later in a
+Codex session from changing the selected adapter.
 
 Automatic attachment is limited to normal `*.dump` buffers and requires both a
 supported agent signature and the configured confidence score. It is off by
