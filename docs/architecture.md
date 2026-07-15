@@ -233,6 +233,10 @@ and version, structured tool output, code previews, dump extension, temporary or
 Zellij paths, and readonly state. A filename alone is insufficient for a
 confident attachment.
 
+When adapters have the same confidence, the detector prefers the candidate with
+the more specific agent signature. An explicit Cursor or Claude banner therefore
+wins over generic action patterns that another adapter can also recognize.
+
 Automatic attachment is limited to normal `*.dump` buffers and requires both a
 supported agent signature and the configured confidence score. It is off by
 default while the fixture corpus grows. `vim.b.agentlog_disable = true` opts one

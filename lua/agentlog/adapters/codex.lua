@@ -209,6 +209,7 @@ function M.detect(lines, context)
     source = M.name,
     transport = nil,
     confidence = 0,
+    specificity = 0,
     evidence = {},
     seen = {},
   }
@@ -240,6 +241,7 @@ function M.detect(lines, context)
 
   local action_count = vim.tbl_count(distinct_actions)
   if action_count > 0 then
+    result.specificity = has_structured_output and 0.6 or 0.5
     add_evidence(result, "codex_action", 0.45)
     add_evidence(result, "agent_signature", 0)
   end

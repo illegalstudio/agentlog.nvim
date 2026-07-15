@@ -267,6 +267,7 @@ function M.detect(lines, context)
     source = M.name,
     transport = nil,
     confidence = 0,
+    specificity = 0,
     evidence = {},
     seen = {},
   }
@@ -289,6 +290,7 @@ function M.detect(lines, context)
   end
 
   if has_header then
+    result.specificity = has_version and 1 or 0.9
     add_evidence(result, "cursor_header", 0.65)
   end
   if has_version then
@@ -304,6 +306,9 @@ function M.detect(lines, context)
     add_evidence(result, "cursor_footer", 0.1)
   end
   if has_header or (has_version and has_tool_ui) then
+    if not has_header then
+      result.specificity = 0.75
+    end
     add_evidence(result, "agent_signature", 0)
   end
 

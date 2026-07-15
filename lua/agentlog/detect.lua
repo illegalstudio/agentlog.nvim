@@ -3,6 +3,18 @@ local config = require("agentlog.config")
 
 local M = {}
 
+local function is_better_candidate(candidate, best)
+  if not best then
+    return true
+  end
+
+  if candidate.confidence ~= best.confidence then
+    return candidate.confidence > best.confidence
+  end
+
+  return (candidate.specificity or 0) > (best.specificity or 0)
+end
+
 function M.from_lines(lines, context)
   local best
 
@@ -15,7 +27,7 @@ function M.from_lines(lines, context)
       and type(adapter.detect) == "function"
     then
       local candidate = adapter.detect(lines, context)
-      if candidate and (not best or candidate.confidence > best.confidence) then
+      if candidate and is_better_candidate(candidate, best) then
         best = candidate
       end
     end

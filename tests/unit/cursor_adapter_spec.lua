@@ -64,6 +64,26 @@ return {
     h.truthy(result.confidence > codex_result.confidence)
   end),
 
+  h.test("explicit Cursor signature wins a confidence tie with Codex", function()
+    local overlapping = {
+      "Cursor Agent",
+      "v2026.07.09-a3815c0",
+      "Read example.lua lines 1-2",
+      "Edited example.lua +1 -1",
+      "│ structured output",
+      "diff --git a/example.lua b/example.lua",
+    }
+    local context = { path = "/tmp/cursor-overlap.dump" }
+    local cursor_result = adapter.detect(overlapping, context)
+    local codex_result = codex_adapter.detect(overlapping, context)
+    local result = detect.from_lines(overlapping, context)
+
+    h.eq(1, cursor_result.confidence)
+    h.eq(1, codex_result.confidence)
+    h.truthy(cursor_result.specificity > codex_result.specificity)
+    h.eq("cursor", result.source)
+  end),
+
   h.test("Cursor detector remains conservative for ordinary version logs", function()
     local result = adapter.detect({
       "Cursor Agent connected to the service",

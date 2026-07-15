@@ -220,6 +220,7 @@ function M.detect(lines, context)
     source = M.name,
     transport = nil,
     confidence = 0,
+    specificity = 0,
     evidence = {},
     seen = {},
   }
@@ -241,6 +242,7 @@ function M.detect(lines, context)
   end
 
   if has_header then
+    result.specificity = 1
     add_evidence(result, "claude_header", 0.65)
   end
   if has_user_turn then
@@ -256,6 +258,9 @@ function M.detect(lines, context)
     add_evidence(result, "claude_code_preview", 0.15)
   end
   if has_header or (has_assistant_turn and (has_user_turn or has_tool_output)) then
+    if not has_header then
+      result.specificity = 0.75
+    end
     add_evidence(result, "agent_signature", 0)
   end
 
