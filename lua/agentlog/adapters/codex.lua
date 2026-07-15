@@ -32,6 +32,11 @@ local response_markers = {
   "● ",
 }
 
+local output_markers = {
+  "└ ",
+  "│ ",
+}
+
 local non_response_prefixes = {
   "Called",
   "Calling",
@@ -108,6 +113,47 @@ local function response_text(line)
   end
 
   return candidate
+end
+
+local function warning_text(line)
+  local candidate = line:gsub("^%s+", "")
+  if starts_with(candidate, "⚠") then
+    return candidate:gsub("^⚠%s*", "")
+  end
+end
+
+local function action_output(line)
+  local candidate = line:gsub("^%s+", "")
+  for _, marker in ipairs(output_markers) do
+    if starts_with(candidate, marker) then
+      candidate = candidate:sub(#marker + 1)
+      break
+    end
+  end
+  local lowered = candidate:lower()
+
+  if starts_with(lowered, "warning:") or starts_with(lowered, "warning[") then
+    return "warning", candidate
+  end
+
+  if
+    starts_with(lowered, "error:")
+    or starts_with(lowered, "error[")
+    or starts_with(lowered, "fatal error:")
+    or starts_with(lowered, "php fatal error:")
+    or starts_with(lowered, "fatal:")
+    or starts_with(lowered, "failed")
+    or starts_with(lowered, "failures:")
+    or lowered:match("^test result:%s*failed")
+    or starts_with(lowered, "make: ***")
+    or lowered:find(" panicked at", 1, true)
+    or lowered:find(": command not found", 1, true)
+    or lowered:find("no such file or directory", 1, true)
+  then
+    return "error", candidate
+  end
+
+  return "output", candidate
 end
 
 local function file_change_action_path(line)
@@ -287,6 +333,11 @@ function M.parse(lines, context)
     local row = index - 1
     local label = action_label(line)
     local response = response_text(line)
+    local warning = warning_text(line)
+    local output_kind, output_text = action_output(line)
+    local standalone_diagnostic = line:match("^%s+")
+      and line ~= ""
+      and output_kind ~= "output"
     local file_path = inside_file_change and file_change_path(line) or nil
     local compact_line = inside_file_change and compact_diff_line(line) or nil
 
@@ -306,6 +357,14 @@ function M.parse(lines, context)
       end
 
       recognize(row, "action", metadata, 0.9)
+    elseif warning then
+      inside_diff = false
+      current_action = nil
+      inside_file_change = false
+      current_path = nil
+      current_language = nil
+      current_diff_id = nil
+      recognize(row, "warning", { text = warning }, 1)
     elseif response then
       inside_diff = false
       current_action = nil
@@ -371,8 +430,10 @@ function M.parse(lines, context)
       recognize(row, "file_reference", diff_metadata({}), 1)
     elseif compact_line then
       recognize(row, "diff", diff_metadata(compact_line), 1)
+    elseif standalone_diagnostic then
+      recognize(row, output_kind, { text = output_text }, 0.9)
     elseif current_action and line:match("^%s+") and line ~= "" then
-      recognize(row, "output", {}, 0.8)
+      recognize(row, "output", { text = output_text }, 0.8)
     elseif line == "" then
       current_action = nil
     end

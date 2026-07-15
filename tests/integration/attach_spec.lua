@@ -44,6 +44,7 @@ return {
     h.eq("agentlog.nvim: next action", buffer_mapping(bufnr, "]a").desc)
     h.eq("agentlog.nvim: next response", buffer_mapping(bufnr, "]r").desc)
     h.eq("agentlog.nvim: next file", buffer_mapping(bufnr, "]f").desc)
+    h.eq("agentlog.nvim: next error or warning", buffer_mapping(bufnr, "]e").desc)
     h.eq("agentlog.nvim: open recognized file", buffer_mapping(bufnr, "gf").desc)
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
     h.falsy(vim.api.nvim_get_option_value("modified", { buf = bufnr }))
@@ -61,6 +62,7 @@ return {
     h.eq(nil, buffer_mapping(bufnr, "]a"))
     h.eq(nil, buffer_mapping(bufnr, "]r"))
     h.eq(nil, buffer_mapping(bufnr, "]f"))
+    h.eq(nil, buffer_mapping(bufnr, "]e"))
     h.eq(nil, buffer_mapping(bufnr, "gf"))
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
 
@@ -145,6 +147,38 @@ return {
     h.eq(1, vim.api.nvim_win_get_cursor(0)[1])
     vim.cmd("normal [r")
     h.eq(6, vim.api.nvim_win_get_cursor(0)[1])
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end),
+
+  h.test("error mappings combine Codex errors and warnings", function()
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "⚠ MCP client failed to start",
+      "",
+      "• Ran cargo test",
+      "  └ error: could not compile `example`",
+      "    warning: build failed, waiting for other jobs to finish...",
+      "",
+      "• Ran printf ok",
+      "  └ ok",
+      "",
+      "• Ran php example.php",
+      "  └ PHP Fatal error: incompatible value",
+    })
+    vim.api.nvim_set_current_buf(bufnr)
+    agentlog.attach(bufnr)
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+
+    vim.cmd("AgentlogNext error")
+    h.eq(4, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal ]e")
+    h.eq(11, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal ]e")
+    h.eq(1, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal [e")
+    h.eq(11, vim.api.nvim_win_get_cursor(0)[1])
 
     agentlog.detach(bufnr)
     vim.api.nvim_buf_delete(bufnr, { force = true })

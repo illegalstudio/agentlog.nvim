@@ -106,6 +106,10 @@ action heading, its file-reference continuation, and all preview rows remain one
 destination. Consecutive path-bearing regions without a `diff_id` are grouped by
 path as a fallback. Unlike diff navigation, context-only `Read` previews qualify.
 
+Diagnostic navigation combines `error` and `warning` regions. Adjacent diagnostic
+rows collapse into one target, preventing a compiler error followed by its build
+warning from requiring two jumps while preserving separate diagnostic blocks.
+
 The target search is independent of cursor movement and supports direction,
 counts, and optional wrapping. The final move uses a normal line jump inside the
 buffer's window so Neovim records it in the jump list.
@@ -123,6 +127,8 @@ The Codex adapter currently recognizes:
   and `Searched`;
 - assistant prose responses while excluding known tool and interface status
   bullets;
+- top-level warning notices and conservatively matched command errors such as
+  compiler errors, fatal errors, panic output, missing files, and failed tests;
 - indented action output;
 - single-file `Edited`, `Added`, and `Deleted` blocks, plus multi-file `Edited`
   blocks;

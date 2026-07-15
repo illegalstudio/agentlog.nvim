@@ -5,6 +5,7 @@ local M = {}
 local navigation_kinds = {
   action = true,
   diff = true,
+  error = true,
   file = true,
   response = true,
 }
@@ -139,8 +140,26 @@ local function file_targets(parsed_document)
   return unique_sorted(rows)
 end
 
+local function diagnostic_targets(parsed_document)
+  local rows = {}
+  local previous_end
+
+  document.walk(parsed_document, function(region)
+    if region.kind == "error" or region.kind == "warning" then
+      if previous_end ~= region.start_row then
+        rows[#rows + 1] = region.start_row
+      end
+      previous_end = region.end_row
+    else
+      previous_end = nil
+    end
+  end)
+
+  return unique_sorted(rows)
+end
+
 function M.kinds()
-  return { "action", "diff", "file", "response" }
+  return { "action", "diff", "error", "file", "response" }
 end
 
 function M.targets(parsed_document, kind)
@@ -150,6 +169,8 @@ function M.targets(parsed_document, kind)
 
   if kind == "diff" then
     return diff_targets(parsed_document)
+  elseif kind == "error" then
+    return diagnostic_targets(parsed_document)
   elseif kind == "file" then
     return file_targets(parsed_document)
   end

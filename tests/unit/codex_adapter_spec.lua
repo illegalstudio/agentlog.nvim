@@ -57,6 +57,22 @@ local response_lines = {
   "  Tutte le verifiche sono passate.",
 }
 
+local diagnostic_lines = {
+  "⚠ MCP client failed to start: connection closed",
+  "",
+  "• Ran cargo test",
+  "  └ Finished test profile",
+  "",
+  "    error: could not compile `example` due to 2 previous errors",
+  "    warning: build failed, waiting for other jobs to finish...",
+  "",
+  "• Ran php example.php",
+  "  └ PHP Fatal error: incompatible value",
+  "",
+  "• Ran rg pattern missing.rs",
+  "  └ rg: missing.rs: No such file or directory (os error 2)",
+}
+
 local function region_at(parsed, row)
   for _, region in ipairs(parsed.regions) do
     if region.start_row == row then
@@ -181,5 +197,21 @@ return {
     h.eq("response", genuine_you_have.kind)
     h.eq("response", final.kind)
     h.eq("## Risultato", final.metadata.text)
+  end),
+
+  h.test("Codex parser recognizes warnings and command errors", function()
+    local parsed = adapter.parse(diagnostic_lines, { transport = "zellij_scrollback" })
+    local startup_warning = region_at(parsed, 0)
+    local compile_error = region_at(parsed, 5)
+    local compile_warning = region_at(parsed, 6)
+    local fatal_error = region_at(parsed, 9)
+    local missing_file = region_at(parsed, 12)
+
+    h.eq("warning", startup_warning.kind)
+    h.eq("MCP client failed to start: connection closed", startup_warning.metadata.text)
+    h.eq("error", compile_error.kind)
+    h.eq("warning", compile_warning.kind)
+    h.eq("error", fatal_error.kind)
+    h.eq("error", missing_file.kind)
   end),
 }

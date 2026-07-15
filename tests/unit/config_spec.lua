@@ -18,6 +18,8 @@ return {
     h.eq("[r", config.get().mappings.previous_response)
     h.eq("]f", config.get().mappings.next_file)
     h.eq("[f", config.get().mappings.previous_file)
+    h.eq("]e", config.get().mappings.next_error)
+    h.eq("[e", config.get().mappings.previous_error)
     h.eq("gf", config.get().mappings.open_file)
   end),
 

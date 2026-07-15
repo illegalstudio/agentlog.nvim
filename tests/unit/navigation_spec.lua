@@ -44,6 +44,8 @@ local parsed = document.new({
       end_row = 12,
       metadata = { diff_id = 3, line_type = "context", path = "src/second.lua" },
     },
+    { kind = "error", start_row = 12, end_row = 13 },
+    { kind = "warning", start_row = 13, end_row = 14 },
     {
       kind = "diff",
       start_row = 14,
@@ -63,6 +65,7 @@ local parsed = document.new({
       end_row = 18,
       metadata = { line_type = "add", path = "src/loose.lua" },
     },
+    { kind = "warning", start_row = 19, end_row = 20 },
   },
 })
 
@@ -70,6 +73,7 @@ return {
   h.test("navigation collects semantic targets and changed diff groups", function()
     h.eq({ 0, 3, 6 }, navigation.targets(parsed, "action"))
     h.eq({ 0, 10, 14, 17 }, navigation.targets(parsed, "diff"))
+    h.eq({ 12, 19 }, navigation.targets(parsed, "error"))
     h.eq({ 0, 6, 10, 14, 17 }, navigation.targets(parsed, "file"))
     h.eq({ 4, 9 }, navigation.targets(parsed, "response"))
   end),
@@ -79,6 +83,7 @@ return {
     h.eq(0, navigation.find_target(parsed, "action", 3, "previous", 1, true))
     h.eq(0, navigation.find_target(parsed, "action", 3, "next", 2, true))
     h.eq(17, navigation.find_target(parsed, "diff", 0, "previous", 1, true))
+    h.eq(19, navigation.find_target(parsed, "error", 12, "next", 1, true))
     h.eq(6, navigation.find_target(parsed, "file", 0, "next", 1, true))
     h.eq(9, navigation.find_target(parsed, "response", 4, "next", 1, true))
 
@@ -88,7 +93,7 @@ return {
   end),
 
   h.test("navigation rejects unsupported kinds and invalid counts", function()
-    h.falsy(pcall(navigation.targets, parsed, "error"))
+    h.falsy(pcall(navigation.targets, parsed, "prompt"))
     h.falsy(pcall(navigation.find_target, parsed, "action", 0, "next", 0, true))
   end),
 }

@@ -127,6 +127,20 @@ local mapping_specs = {
     end,
   },
   {
+    option = "next_error",
+    description = "agentlog.nvim: next error or warning",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "error", "next")
+    end,
+  },
+  {
+    option = "previous_error",
+    description = "agentlog.nvim: previous error or warning",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "error", "previous")
+    end,
+  },
+  {
     option = "open_file",
     description = "agentlog.nvim: open recognized file",
     callback = run_open_file_mapping,

@@ -36,6 +36,8 @@ M.defaults = {
     previous_response = "[r",
     next_file = "]f",
     previous_file = "[f",
+    next_error = "]e",
+    previous_error = "[e",
     open_file = "gf",
   },
 }
