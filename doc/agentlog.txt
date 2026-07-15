@@ -72,6 +72,8 @@ is present on 'runtimepath'.
         previous_diff = "[d",
         next_response = "]r",
         previous_response = "[r",
+        next_file = "]f",
+        previous_file = "[f",
         open_file = "gf",
       },
     })
@@ -121,7 +123,7 @@ COMMANDS                                                      *agentlog-commands
                                                           *:AgentlogNext*
 :AgentlogNext {kind}
         Jump to the next region of {kind}. Supported kinds are `action`, `diff`,
-        and `response`. A command count is accepted; for example:
+        `file`, and `response`. A command count is accepted; for example:
 >
             :3AgentlogNext action
 <
@@ -143,6 +145,8 @@ Navigation mappings are normal-mode, buffer-local, and installed on attach:
     [d      Previous changed diff block.
     ]r      Next assistant response.
     [r      Previous assistant response.
+    ]f      Next recognized file occurrence.
+    [f      Previous recognized file occurrence.
     gf      Open the recognized file under the cursor.
 
 Counts are supported, such as `3]a`. Navigation wraps at the first and last
@@ -153,6 +157,8 @@ All rows belonging to one structured diff are one navigation target. Source
 previews containing only context, such as a Claude `Read`, are not considered
 changed diffs. `gf` uses the exact path stored by the adapter. When no adapter
 path is present at the cursor, Neovim's native |gf| behavior is used.
+File navigation includes context-only previews and groups all regions sharing
+one structured file operation into a single target.
 
 Existing buffer-local mappings take precedence. Detach removes only mappings
 installed by agentlog. Disable or customize the defaults through
@@ -288,6 +294,10 @@ CONFIGURATION                                                  *agentlog-config*
 
 `mappings.next_response`, `mappings.previous_response` ~
         Strings, defaults `]r` and `[r`. Navigate between assistant responses.
+
+`mappings.next_file`, `mappings.previous_file` ~
+        Strings, defaults `]f` and `[f`. Navigate between recognized file
+        occurrences.
 
 `mappings.open_file` ~
         String, default `gf`. Open the recognized file at the cursor. Use an

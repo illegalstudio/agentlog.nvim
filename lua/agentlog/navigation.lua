@@ -5,6 +5,7 @@ local M = {}
 local navigation_kinds = {
   action = true,
   diff = true,
+  file = true,
   response = true,
 }
 
@@ -85,8 +86,61 @@ local function diff_targets(parsed_document)
   return unique_sorted(rows)
 end
 
+local function file_targets(parsed_document)
+  local groups = {}
+  local ungrouped
+  local rows = {}
+
+  local function finish_ungrouped()
+    if ungrouped then
+      rows[#rows + 1] = ungrouped.start_row
+    end
+    ungrouped = nil
+  end
+
+  document.walk(parsed_document, function(region)
+    local metadata = region.metadata or {}
+    local path = metadata.path
+
+    if type(path) ~= "string" or path == "" then
+      finish_ungrouped()
+      return
+    end
+
+    if metadata.diff_id ~= nil then
+      finish_ungrouped()
+      local key = table.concat({ region.source or "unknown", tostring(metadata.diff_id) }, ":")
+      local group = groups[key]
+      if not group then
+        group = { start_row = region.start_row }
+        groups[key] = group
+      end
+      group.start_row = math.min(group.start_row, region.start_row)
+    elseif
+      ungrouped
+      and ungrouped.path == path
+      and ungrouped.end_row == region.start_row
+    then
+      ungrouped.end_row = region.end_row
+    else
+      finish_ungrouped()
+      ungrouped = {
+        path = path,
+        start_row = region.start_row,
+        end_row = region.end_row,
+      }
+    end
+  end)
+
+  finish_ungrouped()
+  for _, group in pairs(groups) do
+    rows[#rows + 1] = group.start_row
+  end
+  return unique_sorted(rows)
+end
+
 function M.kinds()
-  return { "action", "diff", "response" }
+  return { "action", "diff", "file", "response" }
 end
 
 function M.targets(parsed_document, kind)
@@ -96,6 +150,8 @@ function M.targets(parsed_document, kind)
 
   if kind == "diff" then
     return diff_targets(parsed_document)
+  elseif kind == "file" then
+    return file_targets(parsed_document)
   end
 
   local rows = {}

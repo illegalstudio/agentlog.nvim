@@ -99,7 +99,12 @@ corresponding kind. Diff navigation groups regions by `diff_id`, chooses the
 first row of the group, and requires either a diff header/hunk or at least one
 added/deleted row. Consecutive changed rows without a `diff_id` form a fallback
 target for truncated scrollback. Context-only previews are intentionally
-excluded.
+excluded from diff navigation.
+
+File navigation groups every region carrying `metadata.path` by `diff_id`, so an
+action heading, its file-reference continuation, and all preview rows remain one
+destination. Consecutive path-bearing regions without a `diff_id` are grouped by
+path as a fallback. Unlike diff navigation, context-only `Read` previews qualify.
 
 The target search is independent of cursor movement and supports direction,
 counts, and optional wrapping. The final move uses a normal line jump inside the

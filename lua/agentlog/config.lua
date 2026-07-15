@@ -34,6 +34,8 @@ M.defaults = {
     previous_diff = "[d",
     next_response = "]r",
     previous_response = "[r",
+    next_file = "]f",
+    previous_file = "[f",
     open_file = "gf",
   },
 }

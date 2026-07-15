@@ -113,6 +113,20 @@ local mapping_specs = {
     end,
   },
   {
+    option = "next_file",
+    description = "agentlog.nvim: next file",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "file", "next")
+    end,
+  },
+  {
+    option = "previous_file",
+    description = "agentlog.nvim: previous file",
+    callback = function(bufnr)
+      run_navigation_mapping(bufnr, "file", "previous")
+    end,
+  },
+  {
     option = "open_file",
     description = "agentlog.nvim: open recognized file",
     callback = run_open_file_mapping,

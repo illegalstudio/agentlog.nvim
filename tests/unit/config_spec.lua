@@ -16,6 +16,8 @@ return {
     h.eq("[d", config.get().mappings.previous_diff)
     h.eq("]r", config.get().mappings.next_response)
     h.eq("[r", config.get().mappings.previous_response)
+    h.eq("]f", config.get().mappings.next_file)
+    h.eq("[f", config.get().mappings.previous_file)
     h.eq("gf", config.get().mappings.open_file)
   end),
 

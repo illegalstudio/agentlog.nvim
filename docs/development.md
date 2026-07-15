@@ -29,7 +29,7 @@ Tests currently cover:
 - contextual Tree-sitter captures;
 - structural fallback when syntax highlighting is disabled;
 - positive, negative, and per-buffer opt-out behavior for automatic attachment;
-- semantic action/diff/response targets, counts, direction, and wrap behavior;
+- semantic action/diff/file/response targets, counts, direction, and wrap behavior;
 - navigation commands and buffer-local mapping lifecycle;
 - structured `gf` file opening and preservation of existing local mappings.
 
@@ -64,9 +64,9 @@ Then run:
 :checkhealth agentlog
 ```
 
-After attaching, also verify `[a`, `]a`, `[d`, `]d`, `[r`, `]r`, counts such as
-`3]a`, jump-list return with `Ctrl-o`, and `gf` on both absolute and
-repository-relative paths.
+After attaching, also verify `[a`, `]a`, `[d`, `]d`, `[r`, `]r`, `[f`, `]f`,
+counts such as `3]a`, jump-list return with `Ctrl-o`, and `gf` on both absolute
+and repository-relative paths.
 
 For contextual syntax checks, use the normal Neovim configuration or explicitly
 add the relevant parser and query directories to `runtimepath`.
@@ -146,13 +146,12 @@ they affect both audiences.
 ## Navigation follow-ups
 
 Navigation currently covers actions, changed diff blocks, assistant responses,
-and structured file opening. Follow-up work should add:
+file occurrences, and structured file opening. Follow-up work should add:
 
 1. combined error/warning targets with configurable `[e` and `]e` mappings;
-2. dedicated file-reference traversal with `[f` and `]f`;
-3. contextual `<CR>` behavior after folding exists, so opening a file and
+2. contextual `<CR>` behavior after folding exists, so opening a file and
    expanding a block are unambiguous;
-4. optional hunk-level navigation distinct from file-level diff navigation;
-5. repository-root-aware resolution and optional line/column metadata for
+3. optional hunk-level navigation distinct from file-level diff navigation;
+4. repository-root-aware resolution and optional line/column metadata for
    relative file references;
-6. tests for mapping changes applied to buffers that are already attached.
+5. tests for mapping changes applied to buffers that are already attached.

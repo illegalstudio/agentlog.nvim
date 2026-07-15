@@ -83,8 +83,8 @@ The initial commands are:
 - `:AgentlogAttach` - parse and render the current buffer;
 - `:AgentlogRefresh` - rebuild the document and its decorations;
 - `:AgentlogDetach` - remove decorations and restore the previous filetype;
-- `:AgentlogNext {action|diff|response}` - jump to the next semantic region;
-- `:AgentlogPrevious {action|diff|response}` - jump to the previous semantic region;
+- `:AgentlogNext {action|diff|file|response}` - jump to the next semantic region;
+- `:AgentlogPrevious {action|diff|file|response}` - jump to the previous region;
 - `:checkhealth agentlog` - inspect the local runtime.
 
 Automatic attachment is off by default:
@@ -112,6 +112,8 @@ require("agentlog").setup({
     previous_diff = "[d",
     next_response = "]r",
     previous_response = "[r",
+    next_file = "]f",
+    previous_file = "[f",
     open_file = "gf",
   },
 })
@@ -130,12 +132,15 @@ Attached buffers receive these buffer-local normal-mode mappings by default:
 | `]a` / `[a` | Next/previous agent action |
 | `]d` / `[d` | Next/previous changed diff block |
 | `]r` / `[r` | Next/previous assistant response |
+| `]f` / `[f` | Next/previous recognized file occurrence |
 | `gf` | Open the recognized file under the cursor |
 
 Counts are supported, so `3]a` jumps forward three actions. Navigation wraps at
 the buffer boundaries by default and records jumps so regular jump-list motions
 can return to the previous location. A diff containing several rendered rows is
 one destination; read-only source previews are not treated as changes.
+File navigation still includes those read-only previews and groups all rows from
+one structured file operation into a single destination.
 
 Mappings are installed only when the same key is not already mapped locally in
 the attached buffer, and detach removes only mappings installed by agentlog.

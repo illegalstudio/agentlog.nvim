@@ -5,41 +5,72 @@ local navigation = require("agentlog.navigation")
 local parsed = document.new({
   source = "codex",
   regions = {
-    { kind = "action", start_row = 0, end_row = 1, metadata = { diff_id = 1 } },
+    {
+      kind = "action",
+      start_row = 0,
+      end_row = 1,
+      metadata = { diff_id = 1, path = "src/first.lua" },
+    },
     {
       kind = "diff",
       start_row = 1,
       end_row = 2,
-      metadata = { diff_id = 1, line_type = "add" },
+      metadata = { diff_id = 1, line_type = "add", path = "src/first.lua" },
     },
     { kind = "action", start_row = 3, end_row = 4 },
     { kind = "response", start_row = 4, end_row = 5 },
-    { kind = "action", start_row = 6, end_row = 7, metadata = { diff_id = 2 } },
+    {
+      kind = "action",
+      start_row = 6,
+      end_row = 7,
+      metadata = { diff_id = 2, path = "src/read.lua" },
+    },
     {
       kind = "diff",
       start_row = 7,
       end_row = 8,
-      metadata = { diff_id = 2, line_type = "context" },
+      metadata = { diff_id = 2, line_type = "context", path = "src/read.lua" },
     },
     { kind = "response", start_row = 9, end_row = 10 },
-    { kind = "diff_header", start_row = 10, end_row = 11, metadata = { diff_id = 3 } },
+    {
+      kind = "diff_header",
+      start_row = 10,
+      end_row = 11,
+      metadata = { diff_id = 3, path = "src/second.lua" },
+    },
     {
       kind = "diff",
       start_row = 11,
       end_row = 12,
-      metadata = { diff_id = 3, line_type = "context" },
+      metadata = { diff_id = 3, line_type = "context", path = "src/second.lua" },
     },
-    { kind = "diff", start_row = 14, end_row = 15, metadata = { line_type = "context" } },
-    { kind = "diff", start_row = 15, end_row = 16, metadata = { line_type = "delete" } },
+    {
+      kind = "diff",
+      start_row = 14,
+      end_row = 15,
+      metadata = { line_type = "context", path = "src/loose.lua" },
+    },
+    {
+      kind = "diff",
+      start_row = 15,
+      end_row = 16,
+      metadata = { line_type = "delete", path = "src/loose.lua" },
+    },
     { kind = "unknown", start_row = 16, end_row = 17 },
-    { kind = "diff", start_row = 17, end_row = 18, metadata = { line_type = "add" } },
+    {
+      kind = "diff",
+      start_row = 17,
+      end_row = 18,
+      metadata = { line_type = "add", path = "src/loose.lua" },
+    },
   },
 })
 
 return {
-  h.test("navigation collects actions and changed diff groups", function()
+  h.test("navigation collects semantic targets and changed diff groups", function()
     h.eq({ 0, 3, 6 }, navigation.targets(parsed, "action"))
     h.eq({ 0, 10, 14, 17 }, navigation.targets(parsed, "diff"))
+    h.eq({ 0, 6, 10, 14, 17 }, navigation.targets(parsed, "file"))
     h.eq({ 4, 9 }, navigation.targets(parsed, "response"))
   end),
 
@@ -48,6 +79,7 @@ return {
     h.eq(0, navigation.find_target(parsed, "action", 3, "previous", 1, true))
     h.eq(0, navigation.find_target(parsed, "action", 3, "next", 2, true))
     h.eq(17, navigation.find_target(parsed, "diff", 0, "previous", 1, true))
+    h.eq(6, navigation.find_target(parsed, "file", 0, "next", 1, true))
     h.eq(9, navigation.find_target(parsed, "response", 4, "next", 1, true))
 
     local target, message = navigation.find_target(parsed, "action", 6, "next", 1, false)
