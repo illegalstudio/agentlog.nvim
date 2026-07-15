@@ -44,6 +44,19 @@ local file_change_tui_lines = {
   "      1 -return false",
 }
 
+local response_lines = {
+  "• Sto verificando il comportamento sul runtime reale.",
+  "  Il dettaglio continua sulla riga successiva.",
+  "",
+  "• Calling codex_apps.github.get_pr_info({})",
+  "• Updated Plan",
+  "• Waited for background terminal · make test",
+  "• You have 4 usage limit resets available.",
+  "• You have two valid implementation options.",
+  "• ## Risultato",
+  "  Tutte le verifiche sono passate.",
+}
+
 local function region_at(parsed, row)
   for _, region in ipairs(parsed.regions) do
     if region.start_row == row then
@@ -151,5 +164,22 @@ return {
     h.eq("lua", deleted_action.metadata.language)
     h.eq("delete", deleted_line.metadata.line_type)
     h.eq(deleted_action.metadata.diff_id, deleted_line.metadata.diff_id)
+  end),
+
+  h.test("Codex parser recognizes prose responses but excludes status bullets", function()
+    local parsed = adapter.parse(response_lines, { transport = "zellij_scrollback" })
+    local first = region_at(parsed, 0)
+    local statuses = region_at(parsed, 1)
+    local genuine_you_have = region_at(parsed, 7)
+    local final = region_at(parsed, 8)
+
+    h.eq("response", first.kind)
+    h.eq("Sto verificando il comportamento sul runtime reale.", first.metadata.text)
+    h.eq("unknown", statuses.kind)
+    h.eq(1, statuses.start_row)
+    h.eq(7, statuses.end_row)
+    h.eq("response", genuine_you_have.kind)
+    h.eq("response", final.kind)
+    h.eq("## Risultato", final.metadata.text)
   end),
 }

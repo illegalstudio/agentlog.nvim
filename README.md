@@ -83,8 +83,8 @@ The initial commands are:
 - `:AgentlogAttach` - parse and render the current buffer;
 - `:AgentlogRefresh` - rebuild the document and its decorations;
 - `:AgentlogDetach` - remove decorations and restore the previous filetype;
-- `:AgentlogNext {action|diff}` - jump to the next semantic region;
-- `:AgentlogPrevious {action|diff}` - jump to the previous semantic region;
+- `:AgentlogNext {action|diff|response}` - jump to the next semantic region;
+- `:AgentlogPrevious {action|diff|response}` - jump to the previous semantic region;
 - `:checkhealth agentlog` - inspect the local runtime.
 
 Automatic attachment is off by default:
@@ -110,6 +110,8 @@ require("agentlog").setup({
     previous_action = "[a",
     next_diff = "]d",
     previous_diff = "[d",
+    next_response = "]r",
+    previous_response = "[r",
     open_file = "gf",
   },
 })
@@ -127,6 +129,7 @@ Attached buffers receive these buffer-local normal-mode mappings by default:
 | --- | --- |
 | `]a` / `[a` | Next/previous agent action |
 | `]d` / `[d` | Next/previous changed diff block |
+| `]r` / `[r` | Next/previous assistant response |
 | `gf` | Open the recognized file under the cursor |
 
 Counts are supported, so `3]a` jumps forward three actions. Navigation wraps at
@@ -169,8 +172,8 @@ fixture notes under [`tests/fixtures/`](tests/fixtures/).
 ## Status
 
 The immediate next milestone is to expand the anonymized Codex and Claude fixture
-corpus, extend navigation to responses and errors, then add folding, copying, and
-coverage for additional output variants.
+corpus, extend navigation to errors, then add folding, copying, and coverage for
+additional output variants.
 
 ## License
 

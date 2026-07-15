@@ -5,6 +5,7 @@ local M = {}
 local navigation_kinds = {
   action = true,
   diff = true,
+  response = true,
 }
 
 local function diff_region_has_changes(region)
@@ -85,7 +86,7 @@ local function diff_targets(parsed_document)
 end
 
 function M.kinds()
-  return { "action", "diff" }
+  return { "action", "diff", "response" }
 end
 
 function M.targets(parsed_document, kind)

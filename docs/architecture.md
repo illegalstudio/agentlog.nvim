@@ -94,11 +94,12 @@ scrollback and never writes to referenced files.
 ## Navigation
 
 `navigation.lua` derives destinations from the same parsed region document used
-by the renderers. Action navigation targets every `action` region. Diff
-navigation groups regions by `diff_id`, chooses the first row of the group, and
-requires either a diff header/hunk or at least one added/deleted row. Consecutive
-changed rows without a `diff_id` form a fallback target for truncated scrollback.
-Context-only previews are intentionally excluded.
+by the renderers. Action and response navigation target every region of the
+corresponding kind. Diff navigation groups regions by `diff_id`, chooses the
+first row of the group, and requires either a diff header/hunk or at least one
+added/deleted row. Consecutive changed rows without a `diff_id` form a fallback
+target for truncated scrollback. Context-only previews are intentionally
+excluded.
 
 The target search is independent of cursor movement and supports direction,
 counts, and optional wrapping. The final move uses a normal line jump inside the
@@ -115,6 +116,8 @@ The Codex adapter currently recognizes:
 
 - action headings such as `Ran`, `Edited`, `Added`, `Deleted`, `Explored`, `Read`,
   and `Searched`;
+- assistant prose responses while excluding known tool and interface status
+  bullets;
 - indented action output;
 - single-file `Edited`, `Added`, and `Deleted` blocks, plus multi-file `Edited`
   blocks;

@@ -42,6 +42,7 @@ return {
     h.truthy(agentlog.is_attached(bufnr))
     h.eq("agentlog", vim.api.nvim_get_option_value("filetype", { buf = bufnr }))
     h.eq("agentlog.nvim: next action", buffer_mapping(bufnr, "]a").desc)
+    h.eq("agentlog.nvim: next response", buffer_mapping(bufnr, "]r").desc)
     h.eq("agentlog.nvim: open recognized file", buffer_mapping(bufnr, "gf").desc)
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
     h.falsy(vim.api.nvim_get_option_value("modified", { buf = bufnr }))
@@ -57,6 +58,7 @@ return {
     h.eq("text", vim.api.nvim_get_option_value("filetype", { buf = bufnr }))
     h.eq(0, #vim.api.nvim_buf_get_extmarks(bufnr, render.namespace(), 0, -1, {}))
     h.eq(nil, buffer_mapping(bufnr, "]a"))
+    h.eq(nil, buffer_mapping(bufnr, "]r"))
     h.eq(nil, buffer_mapping(bufnr, "gf"))
     h.eq(before, vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
 
@@ -111,6 +113,31 @@ return {
     agentlog.detach(bufnr)
     vim.api.nvim_buf_delete(bufnr, { force = true })
     vim.fn.delete(first_path)
+  end),
+
+  h.test("response mappings and commands navigate Codex prose", function()
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+      "• Prima risposta.",
+      "",
+      "• Ran pwd",
+      "  └ /tmp/example",
+      "",
+      "• Seconda risposta.",
+    })
+    vim.api.nvim_set_current_buf(bufnr)
+    agentlog.attach(bufnr)
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+
+    vim.cmd("AgentlogNext response")
+    h.eq(6, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal ]r")
+    h.eq(1, vim.api.nvim_win_get_cursor(0)[1])
+    vim.cmd("normal [r")
+    h.eq(6, vim.api.nvim_win_get_cursor(0)[1])
+
+    agentlog.detach(bufnr)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
   end),
 
   h.test("attachment preserves pre-existing buffer-local mappings", function()

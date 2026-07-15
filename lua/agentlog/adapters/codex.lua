@@ -27,6 +27,22 @@ local markers = {
   "* ",
 }
 
+local response_markers = {
+  "• ",
+  "● ",
+}
+
+local non_response_prefixes = {
+  "Called",
+  "Calling",
+  "Context compacted",
+  "Model changed",
+  "Searching",
+  "Updated Plan",
+  "Waited",
+  "Working",
+}
+
 local function starts_with(value, prefix)
   return value:sub(1, #prefix) == prefix
 end
@@ -63,6 +79,35 @@ local function action_label(line)
       return label
     end
   end
+end
+
+local function response_text(line)
+  local candidate = line:gsub("^%s+", "")
+  local marked = false
+
+  for _, marker in ipairs(response_markers) do
+    if starts_with(candidate, marker) then
+      candidate = candidate:sub(#marker + 1)
+      marked = true
+      break
+    end
+  end
+
+  if not marked or candidate == "" or action_label(line) then
+    return nil
+  end
+
+  for _, prefix in ipairs(non_response_prefixes) do
+    if candidate == prefix or starts_with(candidate, prefix .. " ") then
+      return nil
+    end
+  end
+
+  if candidate:match("^You have %d+ usage limit resets? available") then
+    return nil
+  end
+
+  return candidate
 end
 
 local function file_change_action_path(line)
@@ -241,6 +286,7 @@ function M.parse(lines, context)
   for index, line in ipairs(lines) do
     local row = index - 1
     local label = action_label(line)
+    local response = response_text(line)
     local file_path = inside_file_change and file_change_path(line) or nil
     local compact_line = inside_file_change and compact_diff_line(line) or nil
 
@@ -260,6 +306,14 @@ function M.parse(lines, context)
       end
 
       recognize(row, "action", metadata, 0.9)
+    elseif response then
+      inside_diff = false
+      current_action = nil
+      inside_file_change = false
+      current_path = nil
+      current_language = nil
+      current_diff_id = nil
+      recognize(row, "response", { text = response }, 0.9)
     elseif line:match("^diff %-%-git ") then
       inside_diff = true
       current_action = nil
